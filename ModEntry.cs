@@ -8,16 +8,16 @@ using StardewValley.Menus;
 using StardewValley.TerrainFeatures;
 using Microsoft.Xna.Framework.Input;
 using StardewValley.Objects;
+using System;
+using System.Collections.Generic;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
 
 namespace BuildModeForTilesAndCraftables
 {
-
     public class ModConfig
     {
         public Keys TurnOnBuildMode { get; set; } = Keys.F1;
         public Keys ToggleBetweenAddandRemoveTiles { get; set; } = Keys.Space;
-
     }
 
     public class ModEntry : Mod
@@ -46,12 +46,54 @@ namespace BuildModeForTilesAndCraftables
 
         public override void Entry(IModHelper helper)
         {
+            Instance = this;
             Config = helper.ReadConfig<ModConfig>() ?? new ModConfig();
             this.modHelper = helper;
             helper.Events.Input.ButtonPressed += this.OnButtonPressed;
             helper.Events.GameLoop.UpdateTicked += this.OnUpdateTicked;
             helper.Events.Display.RenderedHud += this.OnRenderedHud;
         }
+
+        /// <summary>
+        /// Returns a Rectangle representing the toolbar area.
+        /// Adjust the toolbarYOffset value manually until the rectangle is moved down to align with your toolbar.
+        /// </summary>
+        private Rectangle GetToolbarBounds()
+        {
+            // Get the actual screen size, independent of zoom.
+            int screenWidth = Game1.viewport.Width;  // Using viewport instead of uiViewport to ensure screen consistency.
+            int screenHeight = Game1.viewport.Height;
+
+            // UI elements don't scale with zoom, so we do NOT scale offsets by zoom.
+            int toolbarXOffset = (int)(screenWidth* 0.16403);       // Left offset.
+            int toolbarHeight = 180;        // Toolbar height.
+            int toolbarYOffset = (int)(screenHeight*0.1875);       // Vertical offset (move down).
+
+
+
+            // Log the initial viewport dimensions for debugging.
+            //Instance.Monitor.Log($"Viewport Dimensions -> Width: {screenWidth.ToString()}, Height: {screenHeight.ToString()}", StardewModdingAPI.LogLevel.Debug);
+
+            // Ensure the toolbar area stays in the correct position even when zooming.
+            Rectangle toolbarBounds = new Rectangle(
+                toolbarXOffset,
+                screenHeight - toolbarYOffset,
+                screenWidth,
+                toolbarHeight
+            );
+
+            // Log the calculated toolbar bounds.
+            //Instance.Monitor.Log($"Toolbar Bounds -> X: {toolbarBounds.X.ToString()}, Y: {toolbarBounds.Y.ToString()}, Width: {toolbarBounds.Width.ToString()}, Height: {toolbarBounds.Height.ToString()}", StardewModdingAPI.LogLevel.Debug);
+
+            return toolbarBounds;
+        }
+
+
+
+
+
+
+
 
         /// <summary>
         /// Processes input events.
@@ -61,20 +103,26 @@ namespace BuildModeForTilesAndCraftables
             if (!Context.IsWorldReady)
                 return;
 
-            // Toggle custom build mode 
+            // Use our toolbar bounds.
+            Rectangle toolbarBounds = GetToolbarBounds();
+            Point mousePoint = new Point(Game1.getMouseX(false), Game1.getMouseY(false));
+
+            // If the click occurs inside the toolbar area, do not process build mode input.
+            if (toolbarBounds.Contains(mousePoint))
+                return;
+
+            // Toggle custom build mode.
             if (e.Button == Config.TurnOnBuildMode.ToSButton())
             {
                 isBuildModeActive = !isBuildModeActive;
                 if (isBuildModeActive)
                 {
-                    //Monitor.Log("Custom Build Mode Activated", LogLevel.Info);
                     Game1.player.canMove = false;  // Freeze the farmer.
                     originalViewport = new Point(Game1.viewport.X, Game1.viewport.Y);
                     buildCameraOffset = Vector2.Zero;
                 }
                 else
                 {
-                    //Monitor.Log("Custom Build Mode Deactivated", LogLevel.Info);
                     isDragging = false;
                     Game1.player.canMove = true;   // Unfreeze the farmer.
                 }
@@ -84,14 +132,13 @@ namespace BuildModeForTilesAndCraftables
             if (!isBuildModeActive)
                 return;
 
-            // Toggle placement/removal mode using B.
+            // Toggle placement/removal mode using the configured key.
             if (e.Button == Config.ToggleBetweenAddandRemoveTiles.ToSButton())
             {
                 removeMode = !removeMode;
-                //Monitor.Log($"Switched to {(removeMode ? "Removal" : "Placement")} Mode", LogLevel.Info);
             }
 
-            // Left-click: start or finish a drag selection.
+            // Process left-click (outside the toolbar area).
             if (e.Button == SButton.MouseLeft)
             {
                 if (!isDragging)
@@ -99,20 +146,20 @@ namespace BuildModeForTilesAndCraftables
                     isDragging = true;
                     // Lock in the viewport when dragging begins.
                     dragViewport = new Point(Game1.viewport.X, Game1.viewport.Y);
-                    dragStart = SnapToTileWorld(new Point(Game1.getMouseX(false), Game1.getMouseY(false)), dragViewport);
+                    dragStart = SnapToTileWorld(mousePoint, dragViewport);
                     dragEnd = dragStart;
                 }
                 else
                 {
                     // Use the locked viewport while ending the drag.
-                    dragEnd = SnapToTileWorld(new Point(Game1.getMouseX(false), Game1.getMouseY(false)), dragViewport);
+                    dragEnd = SnapToTileWorld(mousePoint, dragViewport);
                     Rectangle selection = GetTileSelectionRectangle(dragStart, dragEnd);
                     if (removeMode)
                         RemoveTiles(selection);
                     else
                         PlaceTiles(selection);
                     isDragging = false;
-                    dragViewport = null; // clear the locked viewport once done
+                    dragViewport = null; // Clear the locked viewport once done.
                 }
             }
 
@@ -122,7 +169,6 @@ namespace BuildModeForTilesAndCraftables
                 if (isDragging)
                 {
                     isDragging = false;
-                    //Monitor.Log("Selection cancelled", LogLevel.Info);
                 }
             }
         }
@@ -167,24 +213,31 @@ namespace BuildModeForTilesAndCraftables
                 return;
 
             SpriteBatch spriteBatch = e.SpriteBatch;
+            Point mousePoint = new Point(Game1.getMouseX(false), Game1.getMouseY(false));
+            Rectangle toolbarBounds = GetToolbarBounds();
 
-            if (!isDragging)
+            // Only draw the build mode highlight if the mouse is not over the toolbar.
+            if (!toolbarBounds.Contains(mousePoint))
             {
-                Point hoverTile = SnapToTileWorld(new Point(Game1.getMouseX(false), Game1.getMouseY(false)));
-                DrawTileOverlay(spriteBatch, hoverTile.X, hoverTile.Y);
-            }
-            else
-            {
-                Rectangle selection = GetTileSelectionRectangle(dragStart, dragEnd);
-                for (int x = selection.X; x < selection.X + selection.Width; x++)
+                if (!isDragging)
                 {
-                    for (int y = selection.Y; y < selection.Y + selection.Height; y++)
+                    Point hoverTile = SnapToTileWorld(mousePoint);
+                    DrawTileOverlay(spriteBatch, hoverTile.X, hoverTile.Y);
+                }
+                else
+                {
+                    Rectangle selection = GetTileSelectionRectangle(dragStart, dragEnd);
+                    for (int x = selection.X; x < selection.X + selection.Width; x++)
                     {
-                        DrawTileOverlay(spriteBatch, x, y);
+                        for (int y = selection.Y; y < selection.Y + selection.Height; y++)
+                        {
+                            DrawTileOverlay(spriteBatch, x, y);
+                        }
                     }
                 }
             }
 
+            // Draw custom instructions overlay regardless of mouse position.
             Rectangle dialogBox = new Rectangle(10, 10, 1000, 150);
             IClickableMenu.drawTextureBox(
                 spriteBatch,
@@ -194,10 +247,11 @@ namespace BuildModeForTilesAndCraftables
                 Color.White * 0.5f, 4f, false
             );
 
-        
-            string modeText = removeMode ? $"Removal Mode ({Config.ToggleBetweenAddandRemoveTiles.ToString()}:Placement Mode)" : $"Placement Mode ({Config.ToggleBetweenAddandRemoveTiles.ToString()}:Removal Mode)";
+            string modeText = removeMode
+                ? $"Removal Mode ({Config.ToggleBetweenAddandRemoveTiles}: Placement Mode)"
+                : $"Placement Mode ({Config.ToggleBetweenAddandRemoveTiles}: Removal Mode)";
             SpriteText.drawString(spriteBatch, modeText, dialogBox.X + 10, dialogBox.Y + 10);
-            SpriteText.drawString(spriteBatch, $"LMB: Select/Drag | RMB: Cancel | {Config.TurnOnBuildMode}: Exit",dialogBox.X + 20, dialogBox.Y + 60);
+            SpriteText.drawString(spriteBatch, $"LMB: Select/Drag | RMB: Cancel | {Config.TurnOnBuildMode}: Exit", dialogBox.X + 20, dialogBox.Y + 60);
         }
 
         /// <summary>
@@ -217,7 +271,7 @@ namespace BuildModeForTilesAndCraftables
         /// <summary>
         /// Returns a rectangle representing the selection area in world tile coordinates.
         /// </summary>
-        private Microsoft.Xna.Framework.Rectangle GetTileSelectionRectangle(Point startTile, Point endTile)
+        private Rectangle GetTileSelectionRectangle(Point startTile, Point endTile)
         {
             int x = Math.Min(startTile.X, endTile.X);
             int y = Math.Min(startTile.Y, endTile.Y);
@@ -273,31 +327,22 @@ namespace BuildModeForTilesAndCraftables
         /// </summary>
         private void PlaceTiles(Rectangle tileArea)
         {
-            //Monitor.Log($"Placing tiles/craftables in tile area: {tileArea}", LogLevel.Info);
-
-            // Get the currently held item.
             var currentItem = Game1.player.CurrentItem as StardewValley.Object;
             if (currentItem == null)
             {
-                //Monitor.Log("Current item is not a valid StardewValley.Object. Aborting placement.", LogLevel.Info);
                 return;
             }
 
-            // Get the floor lookup dictionary.
             Dictionary<string, string> floorLookup = Flooring.GetFloorPathItemLookup();
             bool isFloor = (currentItem.Category == -20 || floorLookup.ContainsKey(currentItem.ParentSheetIndex.ToString()));
 
-            // Allowed items: either floor items OR big craftables.
-            // If the item is not a floor and not a big craftable, disallow placement.
             if (!isFloor && !currentItem.bigCraftable.Value)
             {
-                //Monitor.Log("Only floor items and big craftables are allowed for placement.", LogLevel.Info);
                 return;
             }
 
             if (isFloor)
             {
-                // Floor placement branch remains unchanged.
                 int itemWidth = currentItem.bigCraftable.Value ? 2 : 1;
                 int itemHeight = currentItem.bigCraftable.Value ? 2 : 1;
                 int availableRows = tileArea.Height / itemHeight;
@@ -305,7 +350,6 @@ namespace BuildModeForTilesAndCraftables
                 int totalPlacementsPossible = availableRows * availableCols;
                 int availableInInventory = currentItem.Stack;
                 int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
-                //Monitor.Log($"(Floor) Attempting to place {placementsToDo} instances (of {totalPlacementsPossible} possible and {availableInInventory} available).", LogLevel.Info);
                 int placedCount = 0;
                 if (Game1.currentLocation.terrainFeatures == null)
                 {
@@ -357,41 +401,29 @@ namespace BuildModeForTilesAndCraftables
                 if (placedCount > 0)
                 {
                     currentItem.Stack -= placedCount;
-                    //Monitor.Log($"(Floor) Placed {placedCount} items. Remaining in inventory: {currentItem.Stack}", LogLevel.Info);
                     if (currentItem.Stack <= 0)
                         Game1.player.removeItemFromInventory(currentItem);
-                }
-                else
-                {
-                    //Monitor.Log("No valid floor placements found in the selected area.", LogLevel.Info);
                 }
             }
             else
             {
-                // Since we're in the non-floor branch, the currentItem is a big craftable.
-                // Determine special cases.
                 bool isChest = currentItem is StardewValley.Objects.Chest || currentItem.Name.ToLower().Contains("chest");
                 bool isFence = currentItem.Name.ToLower().Contains("fence");
                 bool isGate = currentItem.Name.ToLower().Contains("gate");
 
-                // Disallow placement of chests, fences, and gates.
                 if (isChest)
                 {
-                    //Monitor.Log("Placement of chest items is disabled.", LogLevel.Info);
                     return;
                 }
                 if (isFence)
                 {
-                    //Monitor.Log("Placement of fence items is disabled.", LogLevel.Info);
                     return;
                 }
                 if (isGate)
                 {
-                    //Monitor.Log("Placement of gate items is disabled.", LogLevel.Info);
                     return;
                 }
 
-                // For allowed big craftable items, force a single-tile footprint.
                 int itemWidth = 1;
                 int itemHeight = 1;
                 int availableRows = tileArea.Height / itemHeight;
@@ -399,8 +431,6 @@ namespace BuildModeForTilesAndCraftables
                 int totalPlacementsPossible = availableRows * availableCols;
                 int availableInInventory = currentItem.Stack;
                 int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
-                //Monitor.Log($"(BigCraftable) Attempting to place {placementsToDo} instances (of {totalPlacementsPossible} possible and {availableInInventory} available).", LogLevel.Info);
-
                 int placedCount = 0;
                 for (int row = 0; row < availableRows; row++)
                 {
@@ -415,11 +445,9 @@ namespace BuildModeForTilesAndCraftables
                         if (!Game1.currentLocation.isTilePlaceable(tileCoord, false))
                             continue;
 
-                        // Use the item's own placementAction to set it up.
                         StardewValley.Object placedItem = currentItem.getOne() as StardewValley.Object;
                         if (placedItem == null)
                         {
-                            //Monitor.Log("Failed to clone the current item using getOne().", LogLevel.Error);
                             continue;
                         }
                         placedItem.Stack = 1;
@@ -439,28 +467,17 @@ namespace BuildModeForTilesAndCraftables
                 if (placedCount > 0)
                 {
                     currentItem.Stack -= placedCount;
-                    //Monitor.Log($"(BigCraftable) Placed {placedCount} items. Remaining in inventory: {currentItem.Stack}", LogLevel.Info);
                     if (currentItem.Stack <= 0)
                         Game1.player.removeItemFromInventory(currentItem);
-                }
-                else
-                {
-                    //Monitor.Log("No valid object placements found in the selected area.", LogLevel.Info);
                 }
             }
         }
 
-
-
-        /// <summary>
-        /// Called when a selection is confirmed in removal mode.
-        /// </summary>
         /// <summary>
         /// Called when a selection is confirmed in removal mode.
         /// </summary>
         private void RemoveTiles(Rectangle tileArea)
         {
-            //Monitor.Log($"Removing tiles/craftables in tile area: {tileArea}", LogLevel.Info);
             for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x++)
             {
                 for (int y = tileArea.Y; y < tileArea.Y + tileArea.Height; y++)
@@ -470,21 +487,17 @@ namespace BuildModeForTilesAndCraftables
                     {
                         StardewValley.Object obj = Game1.currentLocation.objects[tile];
 
-                        // Skip removal if the object is a chest (or its name indicates a chest).
                         if (obj is StardewValley.Objects.Chest ||
                             (!string.IsNullOrEmpty(obj.Name) && obj.Name.ToLower().Contains("chest")))
                         {
-                            //Monitor.Log($"Skipping removal of chest: {obj.Name} at tile {tile}", LogLevel.Info);
                             continue;
                         }
 
-                        // Process floor items as before.
                         if (!string.IsNullOrEmpty(obj.Name) && obj.Name.ToLower().Contains("floor"))
                         {
-                            //Monitor.Log($"Tile is considered a Floor: {obj.Name}", LogLevel.Info);
                             Dictionary<string, string> floorLookup = Flooring.GetFloorPathItemLookup();
                             string floorTileId;
-                            if (!floorLookup.TryGetValue(obj.ItemId, out floorTileId))
+                            if (!floorLookup.TryGetValue(obj.ParentSheetIndex.ToString(), out floorTileId))
                             {
                                 floorTileId = obj.ParentSheetIndex.ToString();
                             }
@@ -499,35 +512,22 @@ namespace BuildModeForTilesAndCraftables
                             if (addedFloor)
                             {
                                 Game1.currentLocation.objects.Remove(tile);
-                                //Monitor.Log($"Removed floor tile '{obj.Name}' from tile {tile}, added inventory item with id {floorTileId}.", LogLevel.Info);
-                            }
-                            else
-                            {
-                                //Monitor.Log($"Could not add floor tile '{obj.Name}' to inventory", LogLevel.Info);
                             }
                         }
                         else
                         {
-                            // Allow removal of fences and gates in addition to big craftable objects.
                             bool isFenceOrGate = !string.IsNullOrEmpty(obj.Name) &&
                                                  (obj.Name.ToLower().Contains("fence") || obj.Name.ToLower().Contains("gate"));
 
                             if (!obj.bigCraftable.Value && !isFenceOrGate)
                             {
-                                //Monitor.Log($"Skipping removal of non-big craftable '{obj.Name}' at tile {tile}.", LogLevel.Info);
                                 continue;
                             }
 
-                            // For allowed objects (big craftable or fences/gates), attempt removal.
                             bool added = Game1.player.addItemToInventoryBool(obj);
                             if (added)
                             {
                                 Game1.currentLocation.objects.Remove(tile);
-                                //Monitor.Log($"Removed {obj.Name} from tile {tile}", LogLevel.Info);
-                            }
-                            else
-                            {
-                                //Monitor.Log($"Could not add {obj.Name} to inventory", LogLevel.Info);
                             }
                         }
                     }
@@ -535,8 +535,6 @@ namespace BuildModeForTilesAndCraftables
             }
             RemoveFloorTiles(tileArea);
         }
-
-
 
         /// <summary>
         /// Removes floor tiles from terrainFeatures in the selected area.
@@ -558,7 +556,6 @@ namespace BuildModeForTilesAndCraftables
                         if (feature is Flooring floor)
                         {
                             string floorType = floor.GetData().ItemId.ToString();
-                            //Monitor.Log($"FLOOR TYPE in this area {key} is identified as item id {floorType}.", LogLevel.Info);
                             StardewValley.Object floorTileItem = new StardewValley.Object(
                                 itemId: floorType,
                                 initialStack: 1,
@@ -570,11 +567,6 @@ namespace BuildModeForTilesAndCraftables
                             if (added)
                             {
                                 Game1.currentLocation.terrainFeatures.Remove(key);
-                                //Monitor.Log($"Removed floor feature at {key} and added inventory item.", LogLevel.Info);
-                            }
-                            else
-                            {
-                                //Monitor.Log($"Could not add floor feature inventory item for feature at {key}", LogLevel.Info);
                             }
                         }
                     }
