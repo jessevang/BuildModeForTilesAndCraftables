@@ -63,27 +63,35 @@ namespace BuildModeForTilesAndCraftables
             // Get the actual screen size, independent of zoom.
             int screenWidth = Game1.viewport.Width;  // Using viewport instead of uiViewport to ensure screen consistency.
             int screenHeight = Game1.viewport.Height;
-
+            //int screenWidth = Game1.uiViewport.Width;  // Using viewport instead of uiViewport to ensure screen consistency.
+            //int screenHeight = Game1.uiViewport.Height;
             // UI elements don't scale with zoom, so we do NOT scale offsets by zoom.
-            int toolbarXOffset = (int)(screenWidth* 0.16403);       // Left offset.
+            int toolbarXOffset = (int)(screenWidth * 0.16403);       // Left offset.
             int toolbarHeight = 180;        // Toolbar height.
-            int toolbarYOffset = (int)(screenHeight*0.1875);       // Vertical offset (move down).
+            int toolbarYOffset = (int)(screenHeight * 0.1475);       // Vertical offset (move down).
 
 
 
             // Log the initial viewport dimensions for debugging.
-            //Instance.Monitor.Log($"Viewport Dimensions -> Width: {screenWidth.ToString()}, Height: {screenHeight.ToString()}", StardewModdingAPI.LogLevel.Debug);
+           // Instance.Monitor.Log($"Viewport Dimensions -> Width: {screenWidth.ToString()}, Height: {screenHeight.ToString()}", StardewModdingAPI.LogLevel.Debug);
 
+
+   
+       
+            /// <param name="x">The x coordinate of the top-left corner of the created <see cref="Rectangle"/>.</param>
+            /// <param name="y">The y coordinate of the top-left corner of the created <see cref="Rectangle"/>.</param>
+            /// <param name="width">The width of the created <see cref="Rectangle"/>.</param>
+            /// <param name="height">The height of the created <see cref="Rectangle"/>.</param>
             // Ensure the toolbar area stays in the correct position even when zooming.
             Rectangle toolbarBounds = new Rectangle(
-                toolbarXOffset,
-                screenHeight - toolbarYOffset,
-                screenWidth,
-                toolbarHeight
+                x: toolbarXOffset,
+                y: screenHeight - toolbarYOffset,
+                width: (int)(screenWidth*.65),
+                height: toolbarHeight
             );
 
             // Log the calculated toolbar bounds.
-            //Instance.Monitor.Log($"Toolbar Bounds -> X: {toolbarBounds.X.ToString()}, Y: {toolbarBounds.Y.ToString()}, Width: {toolbarBounds.Width.ToString()}, Height: {toolbarBounds.Height.ToString()}", StardewModdingAPI.LogLevel.Debug);
+           // Instance.Monitor.Log($"Toolbar Bounds -> X: {toolbarBounds.X.ToString()}, Y: {toolbarBounds.Y.ToString()}, Width: {toolbarBounds.Width.ToString()}, Height: {toolbarBounds.Height.ToString()}", StardewModdingAPI.LogLevel.Debug);
 
             return toolbarBounds;
         }
@@ -247,11 +255,21 @@ namespace BuildModeForTilesAndCraftables
                 Color.White * 0.5f, 4f, false
             );
 
+            
+
+
             string modeText = removeMode
                 ? $"Removal Mode ({Config.ToggleBetweenAddandRemoveTiles}: Placement Mode)"
                 : $"Placement Mode ({Config.ToggleBetweenAddandRemoveTiles}: Removal Mode)";
             SpriteText.drawString(spriteBatch, modeText, dialogBox.X + 10, dialogBox.Y + 10);
             SpriteText.drawString(spriteBatch, $"LMB: Select/Drag | RMB: Cancel | {Config.TurnOnBuildMode}: Exit", dialogBox.X + 20, dialogBox.Y + 60);
+
+
+
+
+
+
+
         }
 
         /// <summary>
