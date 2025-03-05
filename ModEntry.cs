@@ -79,7 +79,7 @@ namespace BuildModeForTilesAndCraftables
                     getValue: () => Config.TurnOnBuildMode.ToSButton(),
                     setValue: value => Config.TurnOnBuildMode = (Keys)value
                 );
-
+           
             gmcm.AddKeybind(
                 ModManifest,
                 name: () => "Selection / Removal",
@@ -458,9 +458,15 @@ namespace BuildModeForTilesAndCraftables
                             for (int dy = 0; dy < itemHeight; dy++)
                             {
                                 Vector2 tile = new Vector2(startX + dx, startY + dy);
-                                if (Game1.currentLocation.objects.ContainsKey(tile) ||
-                                    (Game1.currentLocation.terrainFeatures != null && Game1.currentLocation.terrainFeatures.ContainsKey(tile)) ||
-                                    !Game1.currentLocation.isTilePlaceable(tile, false))
+                                bool objectPresent = Game1.currentLocation.objects.ContainsKey(tile);
+                                // Block if there is already flooring in the tile.
+                                if (Game1.currentLocation.terrainFeatures != null && Game1.currentLocation.terrainFeatures.ContainsKey(tile))
+                                {
+                                    canPlaceBlock = false;
+                                    break;
+                                }
+                                // If no object is present, the tile must be placeable.
+                                if (!objectPresent && !Game1.currentLocation.isTilePlaceable(tile, false))
                                 {
                                     canPlaceBlock = false;
                                     break;
@@ -478,6 +484,7 @@ namespace BuildModeForTilesAndCraftables
                         }
                         Flooring newFloor = new Flooring(floorId);
                         Vector2 placementTile = new Vector2(startX, startY);
+                        // Even if an object is on the tile, if there's no floor yet then add the flooring.
                         if (!Game1.currentLocation.terrainFeatures.ContainsKey(placementTile))
                         {
                             Game1.currentLocation.terrainFeatures.Add(placementTile, newFloor);
@@ -504,6 +511,7 @@ namespace BuildModeForTilesAndCraftables
                 {
                     return;
                 }
+
                 if (isFence)
                 {
                     return;
@@ -512,6 +520,7 @@ namespace BuildModeForTilesAndCraftables
                 {
                     return;
                 }
+
 
                 int itemWidth = 1;
                 int itemHeight = 1;
@@ -561,6 +570,9 @@ namespace BuildModeForTilesAndCraftables
                 }
             }
         }
+
+
+
 
         /// <summary>
         /// Called when a selection is confirmed in removal mode.
