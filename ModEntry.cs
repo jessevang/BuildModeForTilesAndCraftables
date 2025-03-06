@@ -323,10 +323,32 @@ namespace BuildModeForTilesAndCraftables
                 if (keyboardState.IsKeyDown(Keys.D))
                     buildCameraOffset.X += scrollSpeed;
 
-                Game1.viewport.X = originalViewport.X + (int)buildCameraOffset.X;
-                Game1.viewport.Y = originalViewport.Y + (int)buildCameraOffset.Y;
+                // Calculate map dimensions in pixels.
+                int mapWidth = Game1.currentLocation.map.Layers[0].LayerWidth * TileSize;
+                int mapHeight = Game1.currentLocation.map.Layers[0].LayerHeight * TileSize;
+
+                // Calculate the maximum viewport positions.
+                int maxViewportX = mapWidth - Game1.viewport.Width;
+                int maxViewportY = mapHeight - Game1.viewport.Height;
+
+                // Compute the new viewport position based on the original viewport and camera offset.
+                int newViewportX = originalViewport.X + (int)buildCameraOffset.X;
+                int newViewportY = originalViewport.Y + (int)buildCameraOffset.Y;
+
+                // Clamp the viewport coordinates so the camera doesn't scroll beyond the map.
+                newViewportX = Math.Max(0, Math.Min(newViewportX, maxViewportX));
+                newViewportY = Math.Max(0, Math.Min(newViewportY, maxViewportY));
+
+                // Apply the clamped viewport positions.
+                Game1.viewport.X = newViewportX;
+                Game1.viewport.Y = newViewportY;
+
+                // Reset the buildCameraOffset so it reflects the actual viewport position.
+                buildCameraOffset = new Vector2(newViewportX - originalViewport.X, newViewportY - originalViewport.Y);
             }
         }
+
+
 
         /// <summary>
         /// Draws overlay UI for selection and instructions.
