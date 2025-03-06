@@ -38,6 +38,8 @@ namespace BuildModeForTilesAndCraftables
         private Point dragEnd;
         private int previousScrollValue = 0;
 
+        private bool isUsingTool = false;
+
         enum BuildMode
         {
             Placement,
@@ -237,6 +239,15 @@ namespace BuildModeForTilesAndCraftables
             {
 
                 // Tab: change selection to the next slot (could be the same as MouseWheelDown).
+                if (e.Button == SButton.MouseLeft || e.Button ==SButton.C )
+                {
+                    
+                    isUsingTool = true;
+
+                    return;
+                }
+
+                // Tab: change selection to the next slot (could be the same as MouseWheelDown).
                 if (e.Button == SButton.Tab)
                 {
                     //code to switch to next 12 set of items goes here
@@ -331,6 +342,14 @@ namespace BuildModeForTilesAndCraftables
             // While in build mode, update the buildCameraOffset based on WASD input.
             if (isBuildModeActive)
             {
+
+                //if player uses a took during build mode this will ensure player locked so farmer doesn't move
+                if(isUsingTool && !Game1.player.UsingTool)
+                {
+                    isUsingTool = false;
+                    Game1.player.canMove = false;
+                }
+
                 MouseState currentMouseState = Mouse.GetState();
                 int currentScroll = currentMouseState.ScrollWheelValue;
                 int delta = currentScroll - previousScrollValue;
