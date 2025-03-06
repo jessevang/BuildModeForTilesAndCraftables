@@ -19,6 +19,8 @@ namespace BuildModeForTilesAndCraftables
     public class ModConfig
     {
         public Keys TurnOnBuildMode { get; set; } = Keys.F1;
+        public string note000 { get; set; } = "View mode cycles between build and replace mode and allows user to click around in build mode without selecting anything. Generally used to view or to leverage other mods";
+        public bool EnableViewMode { get; set; } = false;
         public Keys ToggleBetweenAddandRemoveTiles { get; set; } = Keys.Space;
         public bool SelectionRemovesFloorTiles { get; set; } = true;
         public bool SelectionRemovesBigCraftables { get; set; } = true;
@@ -37,8 +39,35 @@ namespace BuildModeForTilesAndCraftables
         // Drag start and end in world tile coordinates.
         private Point dragStart;
         private Point dragEnd;
-        // Toggle for removal mode (true) vs. placement mode (false).
-        private bool removeMode = false;
+        // Toggle  removal mode vs. placement mode vs. View Mode 
+        enum BuildMode
+        {
+            Placement,
+            Removal,
+            View
+        }
+
+   
+
+        // In your class, store the current mode:
+        private BuildMode currentMode = BuildMode.Placement;
+
+        // A method to cycle through the modes:
+        private void CycleBuildMode()
+        {
+            if (Config.EnableViewMode)
+            {
+                // Cycle through all modes: Placement, Removal, View.
+                int modeCount = Enum.GetValues(typeof(BuildMode)).Length;
+                currentMode = (BuildMode)(((int)currentMode + 1) % modeCount);
+            }
+            else
+            {
+                // Only toggle between Placement and Removal
+                currentMode = currentMode == BuildMode.Placement ? BuildMode.Removal : BuildMode.Placement;
+            }
+        }
+
         // Base tile size in pixels (64 if the game’s base size is 64).
         private const int TileSize = 64;
         private Point originalViewport;
@@ -117,7 +146,6 @@ namespace BuildModeForTilesAndCraftables
 
         /// <summary>
         /// Returns a Rectangle representing the toolbar area.
-        /// Adjust the toolbarYOffset value manually until the rectangle is moved down to align with your toolbar.
         /// </summary>
         private Rectangle GetToolbarBounds()
         {
@@ -160,6 +188,18 @@ namespace BuildModeForTilesAndCraftables
             if (!Context.IsWorldReady)
                 return;
 
+            // Toggle placement/removal mode using the configured key.
+            if (e.Button == Config.ToggleBetweenAddandRemoveTiles.ToSButton())
+            {
+
+                CycleBuildMode();
+            }
+            
+            if (currentMode == BuildMode.View)
+            {
+                return;
+            }
+
             // Use our toolbar bounds.
             Rectangle toolbarBounds = GetToolbarBounds();
             Point mousePoint = new Point(Game1.getMouseX(false), Game1.getMouseY(false));
@@ -189,15 +229,15 @@ namespace BuildModeForTilesAndCraftables
             if (!isBuildModeActive)
                 return;
 
-            // Toggle placement/removal mode using the configured key.
-            if (e.Button == Config.ToggleBetweenAddandRemoveTiles.ToSButton())
-            {
-                removeMode = !removeMode;
-            }
 
 
-            // Process left-click (outside the toolbar area).
-            if (e.Button == SButton.MouseLeft)
+
+
+
+
+
+                // Process left-click (outside the toolbar area).
+                if (e.Button == SButton.MouseLeft)
             {
                 if (!isDragging)
                 {
@@ -212,7 +252,7 @@ namespace BuildModeForTilesAndCraftables
                     // Use the locked viewport while ending the drag.
                     dragEnd = SnapToTileWorld(mousePoint, dragViewport);
                     Rectangle selection = GetTileSelectionRectangle(dragStart, dragEnd);
-                    if (removeMode)
+                    if (currentMode == BuildMode.Removal)
                     {
 
                         if (Config.SelectionRemovesBigCraftables)
@@ -300,6 +340,37 @@ namespace BuildModeForTilesAndCraftables
             Point mousePoint = new Point(Game1.getMouseX(false), Game1.getMouseY(false));
             Rectangle toolbarBounds = GetToolbarBounds();
 
+
+            // Draw custom instructions overlay regardless of mouse position.
+            Rectangle dialogBox = new Rectangle(10, 10, 1000, 150);
+            IClickableMenu.drawTextureBox(
+                spriteBatch,
+                Game1.mouseCursors,
+                new Rectangle(403, 373, 6, 6),
+                dialogBox.X, dialogBox.Y, dialogBox.Width, dialogBox.Height,
+                Color.White * 0.5f, 4f, false
+            );
+
+
+
+            string modeText = currentMode switch
+            {
+                BuildMode.Placement => $"Placement Mode ({Config.ToggleBetweenAddandRemoveTiles}: toggle mode)",
+                BuildMode.Removal => $"Removal Mode ({Config.ToggleBetweenAddandRemoveTiles}: toggle mode)",
+                BuildMode.View => $"View Mode ({Config.ToggleBetweenAddandRemoveTiles}: toggle mode)",
+                _ => ""
+            };
+
+            SpriteText.drawString(spriteBatch, modeText, dialogBox.X + 10, dialogBox.Y + 10);
+            SpriteText.drawString(spriteBatch, $"LMB: Select/Drag | RMB: Cancel | {Config.TurnOnBuildMode}: Exit", dialogBox.X + 20, dialogBox.Y + 60);
+
+
+            //removes tile on mouse if in view mode
+            if (currentMode == BuildMode.View)
+            {
+                return;
+            }
+
             // Only draw the build mode highlight if the mouse is not over the toolbar.
             if (!toolbarBounds.Contains(mousePoint))
             {
@@ -320,30 +391,6 @@ namespace BuildModeForTilesAndCraftables
                     }
                 }
             }
-
-            // Draw custom instructions overlay regardless of mouse position.
-            Rectangle dialogBox = new Rectangle(10, 10, 1000, 150);
-            IClickableMenu.drawTextureBox(
-                spriteBatch,
-                Game1.mouseCursors,
-                new Rectangle(403, 373, 6, 6),
-                dialogBox.X, dialogBox.Y, dialogBox.Width, dialogBox.Height,
-                Color.White * 0.5f, 4f, false
-            );
-
-
-
-
-            string modeText = removeMode
-                ? $"Removal Mode ({Config.ToggleBetweenAddandRemoveTiles}: Placement Mode)"
-                : $"Placement Mode ({Config.ToggleBetweenAddandRemoveTiles}: Removal Mode)";
-            SpriteText.drawString(spriteBatch, modeText, dialogBox.X + 10, dialogBox.Y + 10);
-            SpriteText.drawString(spriteBatch, $"LMB: Select/Drag | RMB: Cancel | {Config.TurnOnBuildMode}: Exit", dialogBox.X + 20, dialogBox.Y + 60);
-
-
-
-
-
 
 
         }
@@ -381,9 +428,16 @@ namespace BuildModeForTilesAndCraftables
         {
             Vector2 tileVector = new Vector2(tileX, tileY);
             // When in remove mode, default to yellow; otherwise default to green.
-            Color fillColor = removeMode ? Color.Yellow * 0.4f : Color.Green * 0.4f;
 
-            if (removeMode)
+            Color fillColor = currentMode switch
+            {
+                BuildMode.Placement => Color.Green * 0.6f,
+                BuildMode.Removal => Color.Yellow * 0.6f,
+                BuildMode.View => Color.Green * 0.6f,
+                _ => Color.Green * 0.6f
+            };
+
+            if (currentMode == BuildMode.Removal)
             {
                 // Check if there is something to remove.
                 bool hasObject = Game1.currentLocation.objects.ContainsKey(tileVector);
@@ -738,6 +792,7 @@ namespace BuildModeForTilesAndCraftables
 
     }
 }
+
 
 public interface IGenericModConfigMenuApi
 {
