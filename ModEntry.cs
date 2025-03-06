@@ -217,6 +217,25 @@ namespace BuildModeForTilesAndCraftables
             if (toolbarBounds.Contains(mousePoint))
                 return;
 
+            
+            if (Game1.activeClickableMenu is StardewValley.Menus.CarpenterMenu carpenterMenu)
+            {
+                // Check if the menu is in the building construction tab.
+                // The exact index might vary depending on the game version, but often 0 indicates building construction.
+                if (carpenterMenu.IsActive())
+                {
+                    if (e.Button == Config.TurnOnBuildMode.ToSButton())
+                    {
+                        Game1.addHUDMessage(new HUDMessage("Cannot open Build Mode when Carpentor Menu is Open", 3));
+                    }
+                    // Robin's Build Mode is active.
+                    return;
+                }
+            }
+            
+            
+
+
             // Toggle custom build mode.
             if (e.Button == Config.TurnOnBuildMode.ToSButton())
             {
@@ -241,29 +260,17 @@ namespace BuildModeForTilesAndCraftables
                 // Tab: change selection to the next slot (could be the same as MouseWheelDown).
                 if (e.Button == SButton.MouseLeft || e.Button ==SButton.C )
                 {
+             
+                        isUsingTool = true;
                     
-                    isUsingTool = true;
-
-                    return;
+                    
+                    
                 }
 
-                // Tab: change selection to the next slot (could be the same as MouseWheelDown).
-                if (e.Button == SButton.Tab)
-                {
-                    //code to switch to next 12 set of items goes here
-
-                    return;
-                }
             }
 
             if (!isBuildModeActive)
                 return;
-
-
-
-
-
-
 
 
             // Process left-click (outside the toolbar area).
@@ -333,6 +340,8 @@ namespace BuildModeForTilesAndCraftables
         /// </summary>
         private void OnUpdateTicked(object sender, UpdateTickedEventArgs e)
         {
+
+
             // Update drag selection if dragging.
             if (isBuildModeActive && isDragging && dragViewport.HasValue)
             {
