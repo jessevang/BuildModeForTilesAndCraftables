@@ -112,11 +112,20 @@ namespace BuildModeForTilesAndCraftables
 
             gmcm.AddKeybind(
                 ModManifest,
-                name: () => "Selection / Removal",
-                tooltip: () => "Once in build mode this hotkey toggles between Selection mode and Removal Mode",
+                name: () => "Placement / Removal",
+                tooltip: () => "Once in build mode this hotkey toggles between Placement mode and Removal Mode",
                 getValue: () => Config.ToggleBetweenAddandRemoveTiles.ToSButton(),
                 setValue: value => Config.ToggleBetweenAddandRemoveTiles = (Keys)value
                 );
+
+
+            gmcm.AddBoolOption(
+                ModManifest,
+                name: () => "Enable View Mode?",
+                tooltip: () => "Adds View mode with cycling through Remove or Place. Generally used for other mods to enable mouse click",
+                getValue: () => Config.EnableViewMode,
+                setValue: value => Config.EnableViewMode = value
+            );
 
             gmcm.AddBoolOption(
                     ModManifest,
