@@ -47,7 +47,7 @@ namespace BuildModeForTilesAndCraftables
             View
         }
 
-   
+
 
         // In your class, store the current mode:
         private BuildMode currentMode = BuildMode.Placement;
@@ -194,7 +194,7 @@ namespace BuildModeForTilesAndCraftables
 
                 CycleBuildMode();
             }
-            
+
             if (currentMode == BuildMode.View)
             {
                 return;
@@ -236,8 +236,8 @@ namespace BuildModeForTilesAndCraftables
 
 
 
-                // Process left-click (outside the toolbar area).
-                if (e.Button == SButton.MouseLeft)
+            // Process left-click (outside the toolbar area).
+            if (e.Button == SButton.MouseLeft)
             {
                 if (!isDragging)
                 {
@@ -251,6 +251,7 @@ namespace BuildModeForTilesAndCraftables
                 {
                     // Use the locked viewport while ending the drag.
                     dragEnd = SnapToTileWorld(mousePoint, dragViewport);
+                    //dragEnd = SnapToTileWorld(new Point(Game1.getMouseX(false), Game1.getMouseY(false)));
                     Rectangle selection = GetTileSelectionRectangle(dragStart, dragEnd);
                     if (currentMode == BuildMode.Removal)
                     {
@@ -314,14 +315,18 @@ namespace BuildModeForTilesAndCraftables
                 KeyboardState keyboardState = Keyboard.GetState();
                 int scrollSpeed = 12; // Adjust scroll speed as needed.
 
-                if (keyboardState.IsKeyDown(Keys.W))
-                    buildCameraOffset.Y -= scrollSpeed;
-                if (keyboardState.IsKeyDown(Keys.S))
-                    buildCameraOffset.Y += scrollSpeed;
-                if (keyboardState.IsKeyDown(Keys.A))
-                    buildCameraOffset.X -= scrollSpeed;
-                if (keyboardState.IsKeyDown(Keys.D))
-                    buildCameraOffset.X += scrollSpeed;
+                if (isBuildModeActive && !isDragging)
+                {
+                    if (keyboardState.IsKeyDown(Keys.W))
+                        buildCameraOffset.Y -= scrollSpeed;
+                    if (keyboardState.IsKeyDown(Keys.S))
+                        buildCameraOffset.Y += scrollSpeed;
+                    if (keyboardState.IsKeyDown(Keys.A))
+                        buildCameraOffset.X -= scrollSpeed;
+                    if (keyboardState.IsKeyDown(Keys.D))
+                        buildCameraOffset.X += scrollSpeed;
+                }
+
 
                 // Calculate map dimensions in pixels.
                 int mapWidth = Game1.currentLocation.map.Layers[0].LayerWidth * TileSize;
