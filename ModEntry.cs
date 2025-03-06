@@ -467,12 +467,15 @@ namespace BuildModeForTilesAndCraftables
         {
             int offsetX = viewportOverride?.X ?? Game1.viewport.X;
             int offsetY = viewportOverride?.Y ?? Game1.viewport.Y;
+
+            // screenPoint is expected to be unscaled now
             int worldX = screenPoint.X + offsetX;
             int worldY = screenPoint.Y + offsetY;
             int tileX = worldX / TileSize;
             int tileY = worldY / TileSize;
             return new Point(tileX, tileY);
         }
+
 
         /// <summary>
         /// Returns a rectangle representing the selection area in world tile coordinates.
@@ -519,10 +522,11 @@ namespace BuildModeForTilesAndCraftables
                 if (!canPlace)
                     fillColor = Color.Red * 0.4f;
             }
-
-            int screenX = (int)(tileX * TileSize * Game1.options.zoomLevel) - (int)(Game1.viewport.X * Game1.options.zoomLevel);
-            int screenY = (int)(tileY * TileSize * Game1.options.zoomLevel) - (int)(Game1.viewport.Y * Game1.options.zoomLevel);
-            int drawTileSize = (int)(TileSize * Game1.options.zoomLevel);
+            float zoom = Game1.options.zoomLevel;
+            float uiScale = Game1.options.uiScale;
+            int screenX = (int)(((tileX * TileSize * zoom) - (Game1.viewport.X * zoom)) / uiScale);
+            int screenY = (int)(((tileY * TileSize * zoom) - (Game1.viewport.Y * zoom)) / uiScale);
+            int drawTileSize = (int)(TileSize * zoom / uiScale);
             Rectangle tileRect = new Rectangle(screenX, screenY, drawTileSize, drawTileSize);
             spriteBatch.Draw(Game1.staminaRect, tileRect, fillColor);
             DrawRectangleOutline(spriteBatch, tileRect, Color.Black * 0.2f, 2);
