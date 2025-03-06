@@ -22,7 +22,8 @@ namespace BuildModeForTilesAndCraftables
         public Keys ToggleBetweenAddandRemoveTiles { get; set; } = Keys.Space;
         public bool SelectionRemovesFloorTiles { get; set; } = true;
         public bool SelectionRemovesBigCraftables { get; set; } = true;
-        
+        //public bool selectionRemoveNonFloorNonBigCraftableItems { get; set; } = true;
+
     }
 
     public class ModEntry : Mod
@@ -64,22 +65,24 @@ namespace BuildModeForTilesAndCraftables
 
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
-                var gmcm = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
-                if (gmcm == null)
-                    return;
 
-                // Register Mod in GMCM
-                gmcm.Register(ModManifest, () => Config = new ModConfig(), () => Helper.WriteConfig(Config));
+            //Uses API for Generic Mod Config Menu and creates the config menu
+            var gmcm = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+            if (gmcm == null)
+                return;
 
-                // Add Config Options
-                gmcm.AddKeybind(
-                    ModManifest,
-                    name: () => "Build Mode",
-                    tooltip: () => "Toggles On/Off Build Mode",
-                    getValue: () => Config.TurnOnBuildMode.ToSButton(),
-                    setValue: value => Config.TurnOnBuildMode = (Keys)value
-                );
-           
+            // Register Mod in GMCM
+            gmcm.Register(ModManifest, () => Config = new ModConfig(), () => Helper.WriteConfig(Config));
+
+            // Add Config Options
+            gmcm.AddKeybind(
+                ModManifest,
+                name: () => "Build Mode",
+                tooltip: () => "Toggles On/Off Build Mode",
+                getValue: () => Config.TurnOnBuildMode.ToSButton(),
+                setValue: value => Config.TurnOnBuildMode = (Keys)value
+            );
+
             gmcm.AddKeybind(
                 ModManifest,
                 name: () => "Selection / Removal",
@@ -104,38 +107,32 @@ namespace BuildModeForTilesAndCraftables
                 getValue: () => Config.SelectionRemovesBigCraftables,
                 setValue: value => Config.SelectionRemovesBigCraftables = value
             );
-                
+
         }
 
-        
-    
 
 
 
-    /// <summary>
-    /// Returns a Rectangle representing the toolbar area.
-    /// Adjust the toolbarYOffset value manually until the rectangle is moved down to align with your toolbar.
-    /// </summary>
-    private Rectangle GetToolbarBounds()
+
+
+        /// <summary>
+        /// Returns a Rectangle representing the toolbar area.
+        /// Adjust the toolbarYOffset value manually until the rectangle is moved down to align with your toolbar.
+        /// </summary>
+        private Rectangle GetToolbarBounds()
         {
-            // Get the actual screen size, independent of zoom.
-            int screenWidth = Game1.viewport.Width;  // Using viewport instead of uiViewport to ensure screen consistency.
+
+            int screenWidth = Game1.viewport.Width;
             int screenHeight = Game1.viewport.Height;
-            //int screenWidth = Game1.uiViewport.Width;  // Using viewport instead of uiViewport to ensure screen consistency.
-            //int screenHeight = Game1.uiViewport.Height;
-            // UI elements don't scale with zoom, so we do NOT scale offsets by zoom.
-            int toolbarXOffset = (int)(screenWidth * 0.16403);       // Left offset.
-            int toolbarHeight = 180;        // Toolbar height.
-            int toolbarYOffset = (int)(screenHeight * 0.1475);       // Vertical offset (move down).
+
+            int toolbarXOffset = (int)(screenWidth * 0.16403);
+            int toolbarHeight = 180;
+            int toolbarYOffset = (int)(screenHeight * 0.1475);
 
 
-
-            // Log the initial viewport dimensions for debugging.
-           // Instance.Monitor.Log($"Viewport Dimensions -> Width: {screenWidth.ToString()}, Height: {screenHeight.ToString()}", StardewModdingAPI.LogLevel.Debug);
+            // Instance.Monitor.Log($"Viewport Dimensions -> Width: {screenWidth.ToString()}, Height: {screenHeight.ToString()}", StardewModdingAPI.LogLevel.Debug);
 
 
-   
-       
             /// <param name="x">The x coordinate of the top-left corner of the created <see cref="Rectangle"/>.</param>
             /// <param name="y">The y coordinate of the top-left corner of the created <see cref="Rectangle"/>.</param>
             /// <param name="width">The width of the created <see cref="Rectangle"/>.</param>
@@ -144,12 +141,11 @@ namespace BuildModeForTilesAndCraftables
             Rectangle toolbarBounds = new Rectangle(
                 x: toolbarXOffset,
                 y: screenHeight - toolbarYOffset,
-                width: (int)(screenWidth*.65),
+                width: (int)(screenWidth * .65),
                 height: toolbarHeight
             );
 
-            // Log the calculated toolbar bounds.
-           // Instance.Monitor.Log($"Toolbar Bounds -> X: {toolbarBounds.X.ToString()}, Y: {toolbarBounds.Y.ToString()}, Width: {toolbarBounds.Width.ToString()}, Height: {toolbarBounds.Height.ToString()}", StardewModdingAPI.LogLevel.Debug);
+            // Instance.Monitor.Log($"Toolbar Bounds -> X: {toolbarBounds.X.ToString()}, Y: {toolbarBounds.Y.ToString()}, Width: {toolbarBounds.Width.ToString()}, Height: {toolbarBounds.Height.ToString()}", StardewModdingAPI.LogLevel.Debug);
 
             return toolbarBounds;
         }
@@ -199,6 +195,7 @@ namespace BuildModeForTilesAndCraftables
                 removeMode = !removeMode;
             }
 
+
             // Process left-click (outside the toolbar area).
             if (e.Button == SButton.MouseLeft)
             {
@@ -226,8 +223,16 @@ namespace BuildModeForTilesAndCraftables
                         {
                             RemoveFloorTiles(selection);
                         }
-   
-                        
+
+
+                        /*
+                        if (Config.selectionRemoveNonFloorNonBigCraftableItems)
+                        {
+                            removeAllbutFloorAndBigCraftables(selection);
+                        }
+                        */
+
+
 
                     }
 
@@ -326,7 +331,7 @@ namespace BuildModeForTilesAndCraftables
                 Color.White * 0.5f, 4f, false
             );
 
-            
+
 
 
             string modeText = removeMode
@@ -375,13 +380,17 @@ namespace BuildModeForTilesAndCraftables
         private void DrawTileOverlay(SpriteBatch spriteBatch, int tileX, int tileY)
         {
             Vector2 tileVector = new Vector2(tileX, tileY);
-            Color fillColor = Color.Green * 0.4f;
+            // When in remove mode, default to yellow; otherwise default to green.
+            Color fillColor = removeMode ? Color.Yellow * 0.4f : Color.Green * 0.4f;
+
             if (removeMode)
             {
+                // Check if there is something to remove.
                 bool hasObject = Game1.currentLocation.objects.ContainsKey(tileVector);
                 bool hasFloorFeature = Game1.currentLocation.terrainFeatures != null &&
                     Game1.currentLocation.terrainFeatures.ContainsKey(tileVector) &&
                     Game1.currentLocation.terrainFeatures[tileVector].ToString().Contains("Floor", StringComparison.OrdinalIgnoreCase);
+                // If nothing is present for removal, show red.
                 if (!hasObject && !hasFloorFeature)
                     fillColor = Color.Red * 0.4f;
             }
@@ -391,6 +400,7 @@ namespace BuildModeForTilesAndCraftables
                 if (!canPlace)
                     fillColor = Color.Red * 0.4f;
             }
+
             int screenX = (int)(tileX * TileSize * Game1.options.zoomLevel) - (int)(Game1.viewport.X * Game1.options.zoomLevel);
             int screenY = (int)(tileY * TileSize * Game1.options.zoomLevel) - (int)(Game1.viewport.Y * Game1.options.zoomLevel);
             int drawTileSize = (int)(TileSize * Game1.options.zoomLevel);
@@ -398,6 +408,7 @@ namespace BuildModeForTilesAndCraftables
             spriteBatch.Draw(Game1.staminaRect, tileRect, fillColor);
             DrawRectangleOutline(spriteBatch, tileRect, Color.Black * 0.2f, 2);
         }
+
 
         /// <summary>
         /// Draws an outline around a rectangle.
@@ -636,8 +647,8 @@ namespace BuildModeForTilesAndCraftables
                 }
             }
 
-            
-           
+
+
         }
 
         /// <summary>
@@ -677,6 +688,54 @@ namespace BuildModeForTilesAndCraftables
                 }
             }
         }
+
+
+
+        /// <summary>
+        /// Called when a selection is confirmed in removal mode.
+        /// Removes all that aren't chest, floor, or Big Craftable.
+        /// </summary>
+        private void removeAllbutFloorAndBigCraftables(Rectangle tileArea)
+        {
+            for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x++)
+            {
+                for (int y = tileArea.Y; y < tileArea.Y + tileArea.Height; y++)
+                {
+                    Vector2 tile = new Vector2(x, y);
+                    if (Game1.currentLocation.objects.ContainsKey(tile))
+                    {
+                        StardewValley.Object obj = Game1.currentLocation.objects[tile];
+
+                        // Ensure chests are not removed.
+                        bool isChest = obj is StardewValley.Objects.Chest ||
+                                       (!string.IsNullOrEmpty(obj.Name) && obj.Name.ToLower().Contains("chest"));
+                        if (isChest)
+                        {
+                            continue;
+                        }
+
+                        // Determine if this object is a floor tile (by name) or a big craftable.
+                        bool isFloor = !string.IsNullOrEmpty(obj.Name) && obj.Name.ToLower().Contains("floor");
+                        bool isBigCraftable = obj.bigCraftable.Value;
+
+                        // If the object is either a floor tile or a big craftable, do not remove it.
+                        if (isFloor || isBigCraftable)
+                        {
+                            continue;
+                        }
+
+                        // Otherwise, attempt to add the object to the player's inventory.
+                        bool added = Game1.player.addItemToInventoryBool(obj);
+                        if (added)
+                        {
+                            Game1.currentLocation.objects.Remove(tile);
+                        }
+                    }
+                }
+            }
+        }
+
+
     }
 }
 
