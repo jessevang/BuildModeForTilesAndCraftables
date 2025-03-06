@@ -517,11 +517,6 @@ namespace BuildModeForTilesAndCraftables
             Dictionary<string, string> floorLookup = Flooring.GetFloorPathItemLookup();
             bool isFloor = (currentItem.Category == -20 || floorLookup.ContainsKey(currentItem.ParentSheetIndex.ToString()));
 
-            if (!isFloor && !currentItem.bigCraftable.Value)
-            {
-                return;
-            }
-
             if (isFloor)
             {
                 int itemWidth = currentItem.bigCraftable.Value ? 2 : 1;
@@ -604,32 +599,74 @@ namespace BuildModeForTilesAndCraftables
                     return;
                 }
 
-                if (isFence)
+                // If the current item is a fence or gate, use our fence placement logic.
+                if (isFence || isGate)
                 {
-                    return;
-                }
-                if (isGate)
-                {
-                    return;
-                }
-
-
-                int itemWidth = 1;
-                int itemHeight = 1;
-                int availableRows = tileArea.Height / itemHeight;
-                int availableCols = tileArea.Width / itemWidth;
-                int totalPlacementsPossible = availableRows * availableCols;
-                int availableInInventory = currentItem.Stack;
-                int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
-                int placedCount = 0;
-                for (int row = 0; row < availableRows; row++)
-                {
-                    for (int col = 0; col < availableCols; col++)
+                    int itemWidth = 1;
+                    int itemHeight = 1;
+                    int availableRows = tileArea.Height / itemHeight;
+                    int availableCols = tileArea.Width / itemWidth;
+                    int totalPlacementsPossible = availableRows * availableCols;
+                    int availableInInventory = currentItem.Stack;
+                    int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
+                    int placedCount = 0;
+                    for (int row = 0; row < availableRows; row++)
                     {
+                        for (int col = 0; col < availableCols; col++)
+                        {
+                            if (placedCount >= placementsToDo)
+                                break;
+                            int x = tileArea.X + col * itemWidth;
+                            int y = tileArea.Y + row * itemHeight;
+                            Vector2 tileCoord = new Vector2(x, y);
+
+                            // Only attempt placement if the tile is placeable.
+                            if (!Game1.currentLocation.isTilePlaceable(tileCoord, false))
+                                continue;
+
+                            // Create a new fence using the correct constructor:
+                            // Fence(tileLocation, itemId, isGate)
+                            Fence fence = new Fence(tileCoord, currentItem.ParentSheetIndex.ToString(), isGate);
+
+                            // Trigger the fence's placement action.
+                            bool success = fence.placementAction(Game1.currentLocation, x, y, Game1.player);
+
+                            // If placement succeeded (or if the tile is empty), add the fence to the location's objects.
+                            if (success || !Game1.currentLocation.objects.ContainsKey(tileCoord))
+                            {
+                                Game1.currentLocation.objects[tileCoord] = fence;
+                                placedCount++;
+                            }
+                        }
                         if (placedCount >= placementsToDo)
                             break;
-                        int x = tileArea.X + col * itemWidth;
-                        int y = tileArea.Y + row * itemHeight;
+                    }
+                    if (placedCount > 0)
+                    {
+                        currentItem.Stack -= placedCount;
+                        if (currentItem.Stack <= 0)
+                            Game1.player.removeItemFromInventory(currentItem);
+                    }
+                    return;
+                }
+
+                // Normal placement for non-fence, non-floor big craftable objects.
+                int itemWidth2 = 1;
+                int itemHeight2 = 1;
+                int availableRows2 = tileArea.Height / itemHeight2;
+                int availableCols2 = tileArea.Width / itemWidth2;
+                int totalPlacementsPossible2 = availableRows2 * availableCols2;
+                int availableInInventory2 = currentItem.Stack;
+                int placementsToDo2 = Math.Min(totalPlacementsPossible2, availableInInventory2);
+                int placedCount2 = 0;
+                for (int row = 0; row < availableRows2; row++)
+                {
+                    for (int col = 0; col < availableCols2; col++)
+                    {
+                        if (placedCount2 >= placementsToDo2)
+                            break;
+                        int x = tileArea.X + col * itemWidth2;
+                        int y = tileArea.Y + row * itemHeight2;
                         Vector2 tileCoord = new Vector2(x, y);
 
                         if (!Game1.currentLocation.isTilePlaceable(tileCoord, false))
@@ -648,21 +685,45 @@ namespace BuildModeForTilesAndCraftables
                             {
                                 Game1.currentLocation.objects.Add(tileCoord, placedItem);
                             }
-                            placedCount++;
+                            placedCount2++;
                         }
                     }
-                    if (placedCount >= placementsToDo)
+                    if (placedCount2 >= placementsToDo2)
                         break;
                 }
-                if (placedCount > 0)
+                if (placedCount2 > 0)
                 {
-                    currentItem.Stack -= placedCount;
+                    currentItem.Stack -= placedCount2;
                     if (currentItem.Stack <= 0)
                         Game1.player.removeItemFromInventory(currentItem);
                 }
             }
         }
 
+
+        // Example method to place fence objects over a selected rectangle.
+        private void PlaceFencesInSelection(Rectangle selection)
+        {
+            for (int x = selection.X; x < selection.X + selection.Width; x++)
+            {
+                for (int y = selection.Y; y < selection.Y + selection.Height; y++)
+                {
+                    // Create a new fence using the proper constructor.
+                    // Parameters: tileLocation, itemId, isGate.
+                    // Replace "0" with the desired fence ID if necessary.
+                    Fence fence = new Fence(new Vector2(x, y), "0", false);
+
+                    // Trigger the placement action.
+                    // The parameters are: the current location, x tile, y tile, and a valid Farmer reference.
+                    bool placed = fence.placementAction(Game1.currentLocation, x, y, Game1.player);
+
+                    if (!placed)
+                    {
+                        Monitor.Log($"Failed to place fence at tile ({x}, {y})", LogLevel.Warn);
+                    }
+                }
+            }
+        }
 
 
 
@@ -770,7 +831,7 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
-
+        
 
         /// <summary>
         /// Called when a selection is confirmed in removal mode.
