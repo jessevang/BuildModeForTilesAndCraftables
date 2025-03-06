@@ -32,14 +32,12 @@ namespace BuildModeForTilesAndCraftables
     {
         public ModConfig Config { get; private set; }
         public static ModEntry Instance { get; private set; }
-        // Whether our custom build mode is active.
         private bool isBuildModeActive = false;
-        // Whether the player is currently dragging.
         private bool isDragging = false;
-        // Drag start and end in world tile coordinates.
         private Point dragStart;
         private Point dragEnd;
-        // Toggle  removal mode vs. placement mode vs. View Mode 
+        private int previousScrollValue = 0;
+
         enum BuildMode
         {
             Placement,
@@ -226,6 +224,18 @@ namespace BuildModeForTilesAndCraftables
                 return;
             }
 
+            if (isBuildModeActive)
+            {
+
+                // Tab: change selection to the next slot (could be the same as MouseWheelDown).
+                if (e.Button == SButton.Tab)
+                {
+                    //code to switch to next 12 set of items goes here
+
+                    return;
+                }
+            }
+
             if (!isBuildModeActive)
                 return;
 
@@ -312,8 +322,27 @@ namespace BuildModeForTilesAndCraftables
             // While in build mode, update the buildCameraOffset based on WASD input.
             if (isBuildModeActive)
             {
+                MouseState currentMouseState = Mouse.GetState();
+                int currentScroll = currentMouseState.ScrollWheelValue;
+                int delta = currentScroll - previousScrollValue;
+
+                // If the scroll wheel has moved.
+                if (delta > 0)
+                {
+                    // Scrolled up: move hotbar selection left (wrap-around).
+                    Game1.player.CurrentToolIndex = (Game1.player.CurrentToolIndex + 11) % 12;
+                }
+                else if (delta < 0)
+                {
+                    // Scrolled down: move hotbar selection right.
+                    Game1.player.CurrentToolIndex = (Game1.player.CurrentToolIndex + 1) % 12;
+                }
+
+                // Update the previous scroll value for the next tick.
+                previousScrollValue = currentScroll;
+
                 KeyboardState keyboardState = Keyboard.GetState();
-                int scrollSpeed = 12; // Adjust scroll speed as needed.
+                int scrollSpeed = 16; // Adjust scroll speed as needed.
 
                 if (isBuildModeActive && !isDragging)
                 {
