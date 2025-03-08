@@ -21,6 +21,12 @@ namespace BuildModeForTilesAndCraftables
             Dictionary<string, string> floorLookup = Flooring.GetFloorPathItemLookup();
             bool isFloor = (currentItem.Category == -20 || floorLookup.ContainsKey(currentItem.ParentSheetIndex.ToString()));
 
+            // Allow caskets to be placed, but block other chests.
+            bool isChest = currentItem is StardewValley.Objects.Chest ||
+                           (currentItem.Name.ToLower().Contains("chest") && !currentItem.Name.ToLower().Contains("casket"));
+            bool isFence = currentItem.Name.ToLower().Contains("fence");
+            bool isGate = currentItem.Name.ToLower().Contains("gate");
+
             if (isFloor)
             {
                 int itemWidth = currentItem.bigCraftable.Value ? 2 : 1;
@@ -56,8 +62,14 @@ namespace BuildModeForTilesAndCraftables
                                     canPlaceBlock = false;
                                     break;
                                 }
-                                // If no object is present, the tile must be placeable.
-                                if (!objectPresent && !Game1.currentLocation.isTilePlaceable(tile, false))
+                                // Also block if there is an object already on the tile.
+                                if (objectPresent)
+                                {
+                                    canPlaceBlock = false;
+                                    break;
+                                }
+                                // Additionally, if the tile is not placeable, block it.
+                                if (!Game1.currentLocation.isTilePlaceable(tile, false))
                                 {
                                     canPlaceBlock = false;
                                     break;
@@ -75,8 +87,9 @@ namespace BuildModeForTilesAndCraftables
                         }
                         Flooring newFloor = new Flooring(floorId);
                         Vector2 placementTile = new Vector2(startX, startY);
-                        // Even if an object is on the tile, if there's no floor yet then add the flooring.
-                        if (!Game1.currentLocation.terrainFeatures.ContainsKey(placementTile))
+                        // Only add flooring if the tile is completely empty.
+                        if (!Game1.currentLocation.terrainFeatures.ContainsKey(placementTile) &&
+                            !Game1.currentLocation.objects.ContainsKey(placementTile))
                         {
                             Game1.currentLocation.terrainFeatures.Add(placementTile, newFloor);
                             placedCount++;
@@ -92,68 +105,63 @@ namespace BuildModeForTilesAndCraftables
                         Game1.player.removeItemFromInventory(currentItem);
                 }
             }
-            else
+            else if (isChest)
             {
-                bool isChest = currentItem is StardewValley.Objects.Chest || currentItem.Name.ToLower().Contains("chest");
-                bool isFence = currentItem.Name.ToLower().Contains("fence");
-                bool isGate = currentItem.Name.ToLower().Contains("gate");
-
-                if (isChest)
+                // Prevent placement of normal chests.
+                return;
+            }
+            else if (isFence || isGate)
+            {
+                // Fence/gate placement logic.
+                int itemWidth = 1;
+                int itemHeight = 1;
+                int availableRows = tileArea.Height / itemHeight;
+                int availableCols = tileArea.Width / itemWidth;
+                int totalPlacementsPossible = availableRows * availableCols;
+                int availableInInventory = currentItem.Stack;
+                int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
+                int placedCount = 0;
+                for (int row = 0; row < availableRows; row++)
                 {
-                    return;
-                }
-
-                // If the current item is a fence or gate, use our fence placement logic.
-                if (isFence || isGate)
-                {
-                    int itemWidth = 1;
-                    int itemHeight = 1;
-                    int availableRows = tileArea.Height / itemHeight;
-                    int availableCols = tileArea.Width / itemWidth;
-                    int totalPlacementsPossible = availableRows * availableCols;
-                    int availableInInventory = currentItem.Stack;
-                    int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
-                    int placedCount = 0;
-                    for (int row = 0; row < availableRows; row++)
+                    for (int col = 0; col < availableCols; col++)
                     {
-                        for (int col = 0; col < availableCols; col++)
-                        {
-                            if (placedCount >= placementsToDo)
-                                break;
-                            int x = tileArea.X + col * itemWidth;
-                            int y = tileArea.Y + row * itemHeight;
-                            Vector2 tileCoord = new Vector2(x, y);
-
-                            // Only attempt placement if the tile is placeable.
-                            if (!Game1.currentLocation.isTilePlaceable(tileCoord, false))
-                                continue;
-
-                            // Create a new fence using the correct constructor:
-                            // Fence(tileLocation, itemId, isGate)
-                            Fence fence = new Fence(tileCoord, currentItem.ParentSheetIndex.ToString(), isGate);
-
-                            // Trigger the fence's placement action.
-                            bool success = fence.placementAction(Game1.currentLocation, x, y, Game1.player);
-
-                            // If placement succeeded (or if the tile is empty), add the fence to the location's objects.
-                            if (success || !Game1.currentLocation.objects.ContainsKey(tileCoord))
-                            {
-                                Game1.currentLocation.objects[tileCoord] = fence;
-                                placedCount++;
-                            }
-                        }
                         if (placedCount >= placementsToDo)
                             break;
-                    }
-                    if (placedCount > 0)
-                    {
-                        currentItem.Stack -= placedCount;
-                        if (currentItem.Stack <= 0)
-                            Game1.player.removeItemFromInventory(currentItem);
-                    }
-                    return;
-                }
+                        int x = tileArea.X + col * itemWidth;
+                        int y = tileArea.Y + row * itemHeight;
+                        Vector2 tileCoord = new Vector2(x, y);
 
+                        // Only attempt placement if the tile is placeable and empty.
+                        if (!Game1.currentLocation.isTilePlaceable(tileCoord, false) ||
+                            Game1.currentLocation.objects.ContainsKey(tileCoord))
+                            continue;
+
+                        // Create a new fence using the correct constructor.
+                        Fence fence = new Fence(tileCoord, currentItem.ParentSheetIndex.ToString(), isGate);
+
+                        // Trigger the fence's placement action.
+                        bool success = fence.placementAction(Game1.currentLocation, x, y, Game1.player);
+
+                        // Only register placement if the tile is still empty.
+                        if (success && !Game1.currentLocation.objects.ContainsKey(tileCoord))
+                        {
+                            Game1.currentLocation.objects[tileCoord] = fence;
+                            placedCount++;
+                        }
+                    }
+                    if (placedCount >= placementsToDo)
+                        break;
+                }
+                if (placedCount > 0)
+                {
+                    currentItem.Stack -= placedCount;
+                    if (currentItem.Stack <= 0)
+                        Game1.player.removeItemFromInventory(currentItem);
+                }
+                return;
+            }
+            else
+            {
                 // Normal placement for non-fence, non-floor big craftable objects.
                 int itemWidth2 = 1;
                 int itemHeight2 = 1;
@@ -173,21 +181,49 @@ namespace BuildModeForTilesAndCraftables
                         int y = tileArea.Y + row * itemHeight2;
                         Vector2 tileCoord = new Vector2(x, y);
 
-                        if (!Game1.currentLocation.isTilePlaceable(tileCoord, false))
+                        // Only attempt placement if the tile is placeable and empty.
+                        if (!Game1.currentLocation.isTilePlaceable(tileCoord, false) ||
+                            Game1.currentLocation.objects.ContainsKey(tileCoord))
                             continue;
 
-                        StardewValley.Object placedItem = currentItem.getOne() as StardewValley.Object;
-                        if (placedItem == null)
+                        // Special handling for caskets.
+                        if (currentItem.Name.ToLower().Contains("casket"))
+                        {
+                            StardewValley.Object placedItem = currentItem.getOne() as StardewValley.Object;
+                            if (placedItem == null)
+                            {
+                                continue;
+                            }
+                            placedItem.Stack = 1;
+                            // Set the tile location if needed.
+                            placedItem.TileLocation = tileCoord;
+                            Game1.currentLocation.objects.Add(tileCoord, placedItem);
+                            placedCount2++;
+                            continue;
+                        }
+
+                        // For other objects, try normal placement.
+                        StardewValley.Object normalPlacedItem = currentItem.getOne() as StardewValley.Object;
+                        if (normalPlacedItem == null)
                         {
                             continue;
                         }
-                        placedItem.Stack = 1;
-                        bool success = placedItem.placementAction(Game1.currentLocation, (int)tileCoord.X, (int)tileCoord.Y, Game1.player);
+                        normalPlacedItem.Stack = 1;
+                        bool success = false;
+                        try
+                        {
+                            success = normalPlacedItem.placementAction(Game1.currentLocation, (int)tileCoord.X, (int)tileCoord.Y, Game1.player);
+                        }
+                        catch (ArgumentException)
+                        {
+                            // If an exception occurs (such as with some objects), skip this placement.
+                            success = false;
+                        }
                         if (success)
                         {
                             if (!Game1.currentLocation.objects.ContainsKey(tileCoord))
                             {
-                                Game1.currentLocation.objects.Add(tileCoord, placedItem);
+                                Game1.currentLocation.objects.Add(tileCoord, normalPlacedItem);
                             }
                             placedCount2++;
                         }
@@ -204,7 +240,6 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
-       
         public static void RemoveTiles(Rectangle tileArea)
         {
             for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x++)
