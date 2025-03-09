@@ -108,6 +108,9 @@ namespace BuildModeForTilesAndCraftables
                 getValue: () => Config.SelectionRemovesBigCraftables,
                 setValue: value => Config.SelectionRemovesBigCraftables = value
             );
+
+
+            
         }
     }
 }

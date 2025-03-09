@@ -10,5 +10,10 @@ namespace BuildModeForTilesAndCraftables
         public Keys ToggleBetweenAddandRemoveTiles { get; set; } = Keys.Space;
         public bool SelectionRemovesFloorTiles { get; set; } = true;
         public bool SelectionRemovesBigCraftables { get; set; } = true;
+        public string PlayThisMusicInBuildMode { get; set; } = "Cloth";
     }
+
+
+
+
 }

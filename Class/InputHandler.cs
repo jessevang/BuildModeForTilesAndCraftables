@@ -70,7 +70,7 @@ namespace BuildModeForTilesAndCraftables
                     if (!mod.musicChanged)
                     {
                         mod.currentMusic = Game1.getMusicTrackName();
-                        Game1.changeMusicTrack("Cloth");
+                        Game1.changeMusicTrack(Instance.Config.PlayThisMusicInBuildMode);
 
                     }
                 }
