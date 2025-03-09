@@ -156,6 +156,9 @@ namespace BuildModeForTilesAndCraftables
                     {
                         Game1.playSound("axe");
                         TileActions.PlaceTiles(selection);
+                       
+
+
                     }
 
                     mod.isDragging = false;
