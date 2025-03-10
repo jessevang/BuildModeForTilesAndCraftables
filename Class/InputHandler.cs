@@ -128,9 +128,12 @@ namespace BuildModeForTilesAndCraftables
                         if (mod.Config.SelectionRemovesBigCraftables)
                         {
 
-                            TileActions.RemoveTiles(selection);
-                            TileActions.RemoveTreesAndAddTreeSeeds(selection);
+                            TileActions.RemoveAllButFloorAndBigCraftables(selection);
+       
                         }
+
+                        TileActions.RemoveTiles(selection);
+                        TileActions.RemoveTreesAndAddTreeSeeds(selection);
                         if (mod.Config.SelectionRemovesFloorTiles)
                         {
                             Game1.playSound("pickUpItem");
