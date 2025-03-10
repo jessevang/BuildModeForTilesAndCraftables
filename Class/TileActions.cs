@@ -12,6 +12,7 @@ namespace BuildModeForTilesAndCraftables
     {
 
         //PlaceTiles handles placement using the other placement methods.
+        // PlaceTiles handles placement using the other placement methods.
         public static void PlaceTiles(Rectangle tileArea)
         {
             var currentObject = Game1.player.CurrentItem as StardewValley.Object;
@@ -22,21 +23,36 @@ namespace BuildModeForTilesAndCraftables
             if (currentItem == null)
                 return;
 
-            // 1) Check if this item is a tree seed
+            // 1) Check if this item is a tree seed.
             if (IsTreeSeed(currentObject, out int treeType))
             {
                 PlaceTreeSeeds(tileArea, currentObject, treeType);
-                return; // Stop here so we don't do normal placement
+                return; // Stop here so we don't do normal placement.
             }
 
-            // 2) Check for Grass Starter items
+            // 1.1) Check if this item is a normal seed (category -74 in SDV).
+            if (currentObject.Category == -74)
+            {
+                PlaceSeed(tileArea, currentObject);
+                return;
+            }
+
+            // 1.2) Check if the item is a fish item (assuming category -4 for fish).
+            if (currentObject.type.Value.Contains("Fish"))
+            {
+              
+                PlaceFish(tileArea, currentObject);
+                return;
+            }
+
+            // 2) Check for Grass Starter items.
             if (currentItem.ParentSheetIndex == 297 || currentItem.ItemId.Equals("BlueGrassStarter"))
             {
                 PlaceGrass(tileArea, currentObject, currentItem);
                 return;
             }
 
-            // 3) Otherwise, do your existing logic for floor, fences, normal objects, etc.
+            // 3) Otherwise, use your existing logic for floor, fences, normal objects, etc.
             Dictionary<string, string> floorLookup = Flooring.GetFloorPathItemLookup();
             bool isFloor = (currentObject.Category == -20 || floorLookup.ContainsKey(currentObject.ParentSheetIndex.ToString()));
             bool isChest = currentObject is StardewValley.Objects.Chest ||
@@ -61,6 +77,85 @@ namespace BuildModeForTilesAndCraftables
             {
                 PlaceNormalPlacement(tileArea, currentObject);
             }
+        }
+
+
+        private static void PlaceSeed(Rectangle tileArea, StardewValley.Object seedItem)
+        {
+            int availableRows = tileArea.Height;
+            int availableCols = tileArea.Width;
+            int placementsAvailable = seedItem.Stack; // Number of seeds available
+
+            for (int row = 0; row < availableRows && placementsAvailable > 0; row++)
+            {
+                for (int col = 0; col < availableCols && placementsAvailable > 0; col++)
+                {
+                    int x = tileArea.X + col;
+                    int y = tileArea.Y + row;
+                    Vector2 tile = new Vector2(x, y);
+
+                    // Check if the tile is generally placeable and doesn't already have an object.
+                    if (!Game1.currentLocation.isTilePlaceable(tile, false) ||
+                        Game1.currentLocation.objects.ContainsKey(tile))
+                        continue;
+
+                    // Check if the tile is diggable.
+                    string diggable = Game1.currentLocation.doesTileHaveProperty(x, y, "Diggable", "Back");
+                    if (string.IsNullOrEmpty(diggable) || !diggable.Equals("T"))
+                        continue;
+
+                    // Check if there is already a terrain feature (like tilled soil).
+                    if (Game1.currentLocation.terrainFeatures != null &&
+                        Game1.currentLocation.terrainFeatures.ContainsKey(tile))
+                    {
+                        // If the terrain feature is HoeDirt with an existing crop, skip planting.
+                        if (Game1.currentLocation.terrainFeatures[tile] is HoeDirt existingDirt)
+                        {
+                            if (existingDirt.crop != null)
+                                continue; // There's already a planted crop here.
+                            else
+                            {
+                                // No crop: remove it to allow planting.
+                                Game1.currentLocation.terrainFeatures.Remove(tile);
+                            }
+                        }
+                        else
+                        {
+                            // If it's some other terrain feature, skip planting.
+                            continue;
+                        }
+                    }
+
+                    // Create a new HoeDirt instance for planting.
+                    HoeDirt newDirt = new HoeDirt();
+
+                    // Add the new HoeDirt to the location.
+                    Game1.currentLocation.terrainFeatures.Add(tile, newDirt);
+
+                    // Plant the seed using the seed's ParentSheetIndex.
+                    bool planted = newDirt.plant(seedItem.ParentSheetIndex.ToString(), Game1.player, false);
+
+                    // If planting was successful and a crop was created, fully mature it.
+                    if (planted && newDirt.crop != null)
+                    {
+                        newDirt.crop.currentPhase.Value = newDirt.crop.phaseDays.Count - 1;
+                        newDirt.crop.dayOfCurrentPhase.Value = 0;
+                        newDirt.crop.fullyGrown.Value = true;
+                        placementsAvailable--;
+                    }
+                    else
+                    {
+                        // If planting failed, remove the added HoeDirt.
+                        Game1.currentLocation.terrainFeatures.Remove(tile);
+                    }
+                }
+            }
+
+            // Update the seed inventory count based only on the number of seeds actually planted.
+            int seedsUsed = seedItem.Stack - placementsAvailable;
+            seedItem.Stack -= seedsUsed;
+            if (seedItem.Stack <= 0)
+                Game1.player.removeItemFromInventory(seedItem);
         }
 
 
@@ -104,6 +199,7 @@ namespace BuildModeForTilesAndCraftables
                 Game1.player.removeItemFromInventory(currentItem);
         }
 
+
         private static void PlaceGrass(Rectangle tileArea, StardewValley.Object currentItem, StardewValley.Item currentGrass)
         {
             // Determine grass type: 1 for normal, 7 for blue.
@@ -144,6 +240,7 @@ namespace BuildModeForTilesAndCraftables
             if (currentItem.Stack <= 0)
                 Game1.player.removeItemFromInventory(currentItem);
         }
+
 
         private static void PlaceFlooring(Rectangle tileArea, StardewValley.Object currentItem, Dictionary<string, string> floorLookup)
         {
@@ -215,6 +312,7 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
+
         private static void PlaceFenceAndGate(Rectangle tileArea, StardewValley.Object currentItem, bool isGate)
         {
             int itemWidth = 1;
@@ -259,6 +357,7 @@ namespace BuildModeForTilesAndCraftables
                     Game1.player.removeItemFromInventory(currentItem);
             }
         }
+
 
         private static void PlaceNormalPlacement(Rectangle tileArea, StardewValley.Object currentItem)
         {
@@ -346,6 +445,7 @@ namespace BuildModeForTilesAndCraftables
             // etc...
         };
 
+
         private static bool IsTreeSeed(StardewValley.Object obj, out int treeType)
         {
             // First, try by numeric ID
@@ -361,6 +461,7 @@ namespace BuildModeForTilesAndCraftables
             treeType = -1;
             return false;
         }
+
 
         private static void PlaceTreeSeeds(Rectangle tileArea, StardewValley.Object currentSeed, int treeType)
         {
@@ -433,6 +534,7 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
+
         public static void RemoveFloorTiles(Rectangle tileArea)
         {
             if (Game1.currentLocation.terrainFeatures == null)
@@ -468,6 +570,7 @@ namespace BuildModeForTilesAndCraftables
             }
         }
         
+
         public static void RemoveAllButFloorAndBigCraftables(Rectangle tileArea)
         {
             for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x++)
@@ -507,6 +610,7 @@ namespace BuildModeForTilesAndCraftables
                 }
             }
         }
+
 
         public static void RemoveTreesAndAddTreeSeeds(Rectangle tileArea)
         {
@@ -588,6 +692,7 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
+
         public static void RemoveGrassFeatures(Rectangle tileArea)
         {
 
@@ -630,7 +735,6 @@ namespace BuildModeForTilesAndCraftables
                 }
             }
         }
-
 
 
         //can not remove plants as seeds, and untill the soil, furtilizers are not removed and will be lost
