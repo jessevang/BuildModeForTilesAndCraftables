@@ -331,10 +331,6 @@ namespace BuildModeForTilesAndCraftables
         }
 
 
-        /// <summary>
-        /// Maps seed item IDs/names to their corresponding treeType values.
-        /// Adjust as needed for duplicates (e.g., item 88 or multiple MossySeed items).
-        /// </summary>
         private static readonly Dictionary<string, int> SeedToTreeTypeMap = new Dictionary<string, int>
         {
             // Numeric IDs stored as strings
@@ -350,10 +346,6 @@ namespace BuildModeForTilesAndCraftables
             // etc...
         };
 
-        /// <summary>
-        /// Checks whether the current item is in the seed map. 
-        /// Looks up by ParentSheetIndex or by Name (for custom seeds).
-        /// </summary>
         private static bool IsTreeSeed(StardewValley.Object obj, out int treeType)
         {
             // First, try by numeric ID
@@ -370,14 +362,9 @@ namespace BuildModeForTilesAndCraftables
             return false;
         }
 
-
-        /// <summary>
-        /// Places a new Tree feature for each tile in the selected area, based on the specified treeType.
-        /// Consumes one seed per placed tree.
-        /// </summary>
         private static void PlaceTreeSeeds(Rectangle tileArea, StardewValley.Object currentSeed, int treeType)
         {
-            // We assume each tile in the area is 1x1 for placement.
+
             int availableRows = tileArea.Height;
             int availableCols = tileArea.Width;
             int totalPlacementsPossible = availableRows * availableCols;
@@ -396,19 +383,13 @@ namespace BuildModeForTilesAndCraftables
                     int y = tileArea.Y + row;
                     Vector2 tile = new Vector2(x, y);
 
-                    // Only place if the tile is valid: 
-                    // 1) The tile is placeable 
-                    // 2) No existing object or terrain feature 
-                    // 3) Possibly check passability or tile properties if you want to disallow certain tiles
                     if (Game1.currentLocation.isTilePlaceable(tile, false) &&
                         !Game1.currentLocation.objects.ContainsKey(tile) &&
                         !Game1.currentLocation.terrainFeatures.ContainsKey(tile))
                     {
-                        // Create a new Tree. 
-                        // The second parameter is the initial growth stage (0 means newly planted).
+
                         Tree newTree = new Tree(treeType.ToString(), 5, false);
 
-                        // Add the tree to the map
                         Game1.currentLocation.terrainFeatures.Add(tile, newTree);
                         placedCount++;
                     }
@@ -650,7 +631,58 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
-       
+
+
+        //can not remove plants as seeds, and untill the soil, furtilizers are not removed and will be lost
+        public static void RemovePlantedSeeds(Rectangle tileArea)
+        {
+            // If there are no terrain features (like HoeDirt) to check, just exit.
+            if (Game1.currentLocation.terrainFeatures == null)
+                return;
+
+            // Copy the keys so we can safely modify terrainFeatures while iterating.
+            List<Vector2> keys = new List<Vector2>(Game1.currentLocation.terrainFeatures.Keys);
+
+            foreach (Vector2 tile in keys)
+            {
+                // Check if this tile is in the selected rectangle.
+                if (tile.X >= tileArea.X && tile.X < tileArea.X + tileArea.Width &&
+                    tile.Y >= tileArea.Y && tile.Y < tileArea.Y + tileArea.Height)
+                {
+                    // If this terrain feature is HoeDirt, it might have a planted crop.
+                    if (Game1.currentLocation.terrainFeatures[tile] is HoeDirt dirt)
+                    {
+                        // Check if there's a crop planted.
+                        if (dirt.crop != null)
+                        {
+                            // Convert the crop’s netSeedIndex (a NetString) to an integer.
+                            if (!int.TryParse(dirt.crop.netSeedIndex.Value, out int seedIndex))
+                            {
+                                // If conversion fails, skip processing this tile.
+                                continue;
+                            }
+
+                            // Create the corresponding seed object using the seed index.
+                            StardewValley.Object seedItem = new StardewValley.Object(seedIndex.ToString(), 1);
+                            bool added = Game1.player.addItemToInventoryBool(seedItem);
+                            if (added)
+                            {
+                                // Attempt to recover fertilizer (or speed growth item) if it exists.
+                                if (int.TryParse(dirt.fertilizer.Value, out int fertValue) && fertValue > 0)
+                                {
+                                    StardewValley.Object fertItem = new StardewValley.Object(fertValue.ToString(), 1);
+                                    Game1.player.addItemToInventoryBool(fertItem);
+                                }
+
+                                // Remove the HoeDirt (which contains both the crop and the fertilizer)
+                                // so that the tile reverts back to untilled ground.
+                                Game1.currentLocation.terrainFeatures.Remove(tile);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
 
     }

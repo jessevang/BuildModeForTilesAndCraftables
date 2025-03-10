@@ -134,6 +134,7 @@ namespace BuildModeForTilesAndCraftables
 
                         TileActions.RemoveTiles(selection);
                         TileActions.RemoveTreesAndAddTreeSeeds(selection);
+                        TileActions.RemovePlantedSeeds(selection);
                         if (mod.Config.SelectionRemovesFloorTiles)
                         {
                             Game1.playSound("pickUpItem");
