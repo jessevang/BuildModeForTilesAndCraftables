@@ -17,6 +17,59 @@ namespace BuildModeForTilesAndCraftables
             {
                 return;
             }
+            var currentGrass = Game1.player.CurrentItem as StardewValley.Item;
+            if (currentGrass == null)
+            {
+                return;
+            }
+
+            // Check for Grass Starter items (green or blue grass starter and places it)
+            string currentItemName = currentGrass.Name.ToLower();
+            // It’s often more reliable to check the ParentSheetIndex for numeric IDs.
+            if (currentGrass.ParentSheetIndex == 297 || currentGrass.ItemId.Equals("BlueGrassStarter"))
+            {
+                // Determine grass type: 1 for normal, 7 for blue.
+                int grassType = currentGrass.ItemId.Equals("BlueGrassStarter") ? 7 : 1;
+
+                // We assume that each tile in the given area is 1x1.
+                int availableRows = tileArea.Height;
+                int availableCols = tileArea.Width;
+                int totalPlacementsPossible = availableRows * availableCols;
+                int availableInInventory = currentItem.Stack;
+                int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
+                int placedCount = 0;
+
+                for (int row = 0; row < availableRows; row++)
+                {
+                    for (int col = 0; col < availableCols; col++)
+                    {
+                        if (placedCount >= placementsToDo)
+                            break;
+                        int x = tileArea.X + col;
+                        int y = tileArea.Y + row;
+                        Vector2 tile = new Vector2(x, y);
+
+                        // Only place if the tile is empty and placeable.
+                        if (Game1.currentLocation.isTilePlaceable(tile, false) &&
+                            !Game1.currentLocation.terrainFeatures.ContainsKey(tile) &&
+                            !Game1.currentLocation.objects.ContainsKey(tile))
+                        {
+                            // Swap parameters: first parameter is the number of blades, second is the grass type.
+                            Grass newGrass = new Grass(grassType, 4);
+                            Game1.currentLocation.terrainFeatures.Add(tile, newGrass);
+                            placedCount++;
+                        }
+                    }
+                    if (placedCount >= placementsToDo)
+                        break;
+                }
+
+                // Update inventory.
+                currentItem.Stack -= placedCount;
+                if (currentItem.Stack <= 0)
+                    Game1.player.removeItemFromInventory(currentItem);
+                return;
+            }
 
             Dictionary<string, string> floorLookup = Flooring.GetFloorPathItemLookup();
             bool isFloor = (currentItem.Category == -20 || floorLookup.ContainsKey(currentItem.ParentSheetIndex.ToString()));
@@ -228,8 +281,6 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
-
-
         public static void RemoveTiles(Rectangle tileArea)
         {
             for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x++)
@@ -291,6 +342,7 @@ namespace BuildModeForTilesAndCraftables
                 }
             }
         }
+        
         public static void RemoveAllButFloorAndBigCraftables(Rectangle tileArea)
         {
             for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x++)
@@ -331,7 +383,6 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
-
         public static void RemoveTreesAndAddTreeSeeds(Rectangle tileArea)
         {
             // Check that the terrain features have been initialized.
@@ -349,8 +400,7 @@ namespace BuildModeForTilesAndCraftables
                     // Check if the terrain feature at this tile is a tree.
                     if (Game1.currentLocation.terrainFeatures[key] is StardewValley.TerrainFeatures.Tree tree)
                     {
-
-                        string TreeType = tree.treeType.ToString();//tree.TextureName;
+                        string TreeType = tree.treeType.ToString();
                         string seedItem = null;
                         if (TreeType.Equals("1"))
                         {
@@ -397,7 +447,6 @@ namespace BuildModeForTilesAndCraftables
                             seedItem = "MysticTreeSeed";
                         }
 
-
                         if (seedItem != null)
                         {
                             StardewValley.Object treeSeedItem = new StardewValley.Object(seedItem, 1);
@@ -408,10 +457,50 @@ namespace BuildModeForTilesAndCraftables
                                 // If successfully added, remove the tree from the terrain features.
                                 Game1.currentLocation.terrainFeatures.Remove(key);
                             }
+                        }
+                    }
+                }
+            }
+        }
 
+        public static void RemoveGrassFeatures(Rectangle tileArea)
+        {
+
+            if (Game1.currentLocation.terrainFeatures == null)
+                return;
+
+            List<Vector2> keys = new List<Vector2>(Game1.currentLocation.terrainFeatures.Keys);
+
+            foreach (Vector2 key in keys)
+            {
+
+                if (key.X >= tileArea.X && key.X < tileArea.X + tileArea.Width &&
+                    key.Y >= tileArea.Y && key.Y < tileArea.Y + tileArea.Height)
+                {
+
+                    if (Game1.currentLocation.terrainFeatures[key] is Grass grass)
+                    {
+                        StardewValley.Object returnItem = null;
+
+                        if (grass.grassType.Get() == 7)
+                        {
+                            returnItem = new StardewValley.Object("BlueGrassStarter", 1);
+                        }
+                        else if (grass.grassType.Get() == 1)
+                        {
+                            returnItem = new StardewValley.Object("297", 1);
                         }
 
-
+                        // If we have a valid item, add it to the player's inventory.
+                        if (returnItem != null)
+                        {
+                            bool added = Game1.player.addItemToInventoryBool(returnItem);
+                            if (added)
+                            {
+                                // Remove the grass feature once its corresponding item is added.
+                                Game1.currentLocation.terrainFeatures.Remove(key);
+                            }
+                        }
                     }
                 }
             }
@@ -421,5 +510,4 @@ namespace BuildModeForTilesAndCraftables
 
 
     }
-
 }

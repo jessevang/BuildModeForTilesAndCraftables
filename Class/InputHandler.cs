@@ -137,7 +137,7 @@ namespace BuildModeForTilesAndCraftables
                             TileActions.RemoveFloorTiles(selection);
                         }
 
-
+                        TileActions.RemoveGrassFeatures(selection);
                         /*
                         if (Config.selectionRemoveNonFloorNonBigCraftableItems)
                         {

@@ -10,6 +10,7 @@ namespace BuildModeForTilesAndCraftables
 {
     public static class RenderHandler
     {
+
         public static Rectangle GetToolbarBounds()
         {
 
