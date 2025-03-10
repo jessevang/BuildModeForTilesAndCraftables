@@ -129,6 +129,7 @@ namespace BuildModeForTilesAndCraftables
                         {
 
                             TileActions.RemoveTiles(selection);
+                            TileActions.RemoveTreesAndAddTreeSeeds(selection);
                         }
                         if (mod.Config.SelectionRemovesFloorTiles)
                         {
@@ -156,7 +157,9 @@ namespace BuildModeForTilesAndCraftables
                     {
                         Game1.playSound("axe");
                         TileActions.PlaceTiles(selection);
-                       
+                 
+
+
 
 
                     }

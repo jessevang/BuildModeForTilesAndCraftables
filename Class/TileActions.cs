@@ -228,7 +228,7 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
-        
+
 
         public static void RemoveTiles(Rectangle tileArea)
         {
@@ -331,6 +331,95 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
-      
+
+        public static void RemoveTreesAndAddTreeSeeds(Rectangle tileArea)
+        {
+            // Check that the terrain features have been initialized.
+            if (Game1.currentLocation.terrainFeatures == null)
+                return;
+
+            // Make a list of all keys so we can modify the dictionary safely while iterating.
+            List<Vector2> keys = new List<Vector2>(Game1.currentLocation.terrainFeatures.Keys);
+            foreach (Vector2 key in keys)
+            {
+                // Check if the key (tile) is within the selected area.
+                if (key.X >= tileArea.X && key.X < tileArea.X + tileArea.Width &&
+                    key.Y >= tileArea.Y && key.Y < tileArea.Y + tileArea.Height)
+                {
+                    // Check if the terrain feature at this tile is a tree.
+                    if (Game1.currentLocation.terrainFeatures[key] is StardewValley.TerrainFeatures.Tree tree)
+                    {
+
+                        string TreeType = tree.treeType.ToString();//tree.TextureName;
+                        string seedItem = null;
+                        if (TreeType.Equals("1"))
+                        {
+                            seedItem = "(O)309";
+                        }
+                        else if (TreeType.Equals("2"))
+                        {
+                            seedItem = "(O)310";
+                        }
+                        else if (TreeType.Equals("3"))
+                        {
+                            seedItem = "(O)311";
+                        }
+                        else if (TreeType.Equals("7"))
+                        {
+                            seedItem = "(O)891";
+                        }
+                        else if (TreeType.Equals("8"))
+                        {
+                            seedItem = "(O)292";
+                        }
+                        else if (TreeType.Equals("6"))
+                        {
+                            seedItem = "(O)88";
+                        }
+                        else if (TreeType.Equals("9"))
+                        {
+                            seedItem = "(O)88";
+                        }
+                        else if (TreeType.Equals("10"))
+                        {
+                            seedItem = "MossySeed";
+                        }
+                        else if (TreeType.Equals("11"))
+                        {
+                            seedItem = "MossySeed";
+                        }
+                        else if (TreeType.Equals("12"))
+                        {
+                            seedItem = "MossySeed";
+                        }
+                        else if (TreeType.Equals("13"))
+                        {
+                            seedItem = "MysticTreeSeed";
+                        }
+
+
+                        if (seedItem != null)
+                        {
+                            StardewValley.Object treeSeedItem = new StardewValley.Object(seedItem, 1);
+                            // Attempt to add the tree seed to the player's inventory.
+                            bool added = Game1.player.addItemToInventoryBool(treeSeedItem);
+                            if (added)
+                            {
+                                // If successfully added, remove the tree from the terrain features.
+                                Game1.currentLocation.terrainFeatures.Remove(key);
+                            }
+
+                        }
+
+
+                    }
+                }
+            }
+        }
+
+
+
+
     }
+
 }
