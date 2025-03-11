@@ -12,7 +12,6 @@ namespace BuildModeForTilesAndCraftables
     {
 
         //PlaceTiles handles placement using the other placement methods.
-        // PlaceTiles handles placement using the other placement methods.
         public static void PlaceTiles(Rectangle tileArea)
         {
             var currentObject = Game1.player.CurrentItem as StardewValley.Object;
@@ -26,7 +25,7 @@ namespace BuildModeForTilesAndCraftables
             // 1) Check if this item is a tree seed.
             if (IsTreeSeed(currentObject, out int treeType))
             {
-                PlaceTreeSeeds(tileArea, currentObject, treeType);
+                PlaceTreeSeeds(tileArea, currentObject);
                 return; // Stop here so we don't do normal placement.
             }
 
@@ -433,44 +432,56 @@ namespace BuildModeForTilesAndCraftables
         private static readonly Dictionary<string, int> SeedToTreeTypeMap = new Dictionary<string, int>
         {
             // Numeric IDs stored as strings
-            ["309"] = 1, // Acorn
-            ["310"] = 2, // Maple Seed
-            ["311"] = 3, // Pine Cone
-            ["891"] = 7, // Mahogany Seed
-            ["292"] = 8, // Some modded seed?
-            ["88"] = 6, // If you need 9 for some items, you'd need custom logic
-                        // String keys for custom seeds
+            ["309"] = 1, 
+            ["310"] = 2, 
+            ["311"] = 3,
+            ["891"] = 7,
+            ["292"] = 8, 
+            ["88"] = 6, 
+                       
             ["MossySeed"] = 10,
             ["MysticTreeSeed"] = 13
-            // etc...
+
         };
 
 
-        private static bool IsTreeSeed(StardewValley.Object obj, out int treeType)
+        private static readonly Dictionary<int, int> FruitTreeMappings = new Dictionary<int, int>
         {
-            // First, try by numeric ID
-            string key = obj.ParentSheetIndex.ToString();
-            if (SeedToTreeTypeMap.TryGetValue(key, out treeType))
-                return true;
+            [628] = 628,  // Cherry Sapling
+            [629] = 629,  // Apricot Sapling
+            [630] = 630,  // Orange Sapling
+            [631] = 631,  // Peach Sapling
+            [632] = 632,  // Pomegranate Sapling
+            [633] = 633,  // Apple Sapling
+            [69] = 69,   // Banana Sapling
+            [835] = 835   // Mango Sapling
+        };
 
-            // Otherwise, try by item name (for seeds like "MossySeed", "MysticTreeSeed", etc.)
-            string nameKey = obj.Name;
-            if (SeedToTreeTypeMap.TryGetValue(nameKey, out treeType))
-                return true;
-
-            treeType = -1;
-            return false;
-        }
-
-
-        private static void PlaceTreeSeeds(Rectangle tileArea, StardewValley.Object currentSeed, int treeType)
+        // Standard tree seeds mapping remains unchanged.
+        private static readonly Dictionary<string, string> StandardTreeMappings = new Dictionary<string, string>
         {
+            // Numeric ID as string -> treeType string for standard trees.
+            ["309"] = "1",  // Maple Seed
+            ["310"] = "2",  // Acorn (Oak)
+            ["311"] = "3",  // Pine Cone
+            ["891"] = "7",  // Mahogany
+            ["292"] = "8",  // Palm
+            ["88"] = "6",  // Mushroom, etc.
 
+            // By name for custom seeds:
+            ["MossySeed"] = "10",
+            ["MysticTreeSeed"] = "13"
+        };
+
+        private static void PlaceTreeSeeds(Rectangle tileArea, StardewValley.Object currentSeed)
+        {
+            // Determine how many placements we can do.
             int availableRows = tileArea.Height;
             int availableCols = tileArea.Width;
             int totalPlacementsPossible = availableRows * availableCols;
             int availableInInventory = currentSeed.Stack;
             int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
+
             int placedCount = 0;
 
             for (int row = 0; row < availableRows; row++)
@@ -484,27 +495,84 @@ namespace BuildModeForTilesAndCraftables
                     int y = tileArea.Y + row;
                     Vector2 tile = new Vector2(x, y);
 
-                    if (Game1.currentLocation.isTilePlaceable(tile, false) &&
-                        !Game1.currentLocation.objects.ContainsKey(tile) &&
-                        !Game1.currentLocation.terrainFeatures.ContainsKey(tile))
+                    // Ensure the tile is valid for placement.
+                    if (Game1.currentLocation.isTilePlaceable(tile, false)
+                        && !Game1.currentLocation.objects.ContainsKey(tile)
+                        && !Game1.currentLocation.terrainFeatures.ContainsKey(tile))
                     {
+                        // 1) Check if this seed is a recognized fruit tree sapling.
+                        if (FruitTreeMappings.TryGetValue(currentSeed.ParentSheetIndex, out int saplingItemID))
+                        {
+                           
+                            StardewValley.TerrainFeatures.FruitTree newFruitTree =
+                                new StardewValley.TerrainFeatures.FruitTree(saplingItemID.ToString(), 5);
+                            newFruitTree.growthStage.Value = 4;
+                            newFruitTree.daysUntilMature.Value = 0;
+                            newFruitTree.TryAddFruit();
+                            newFruitTree.TryAddFruit();
+                            newFruitTree.TryAddFruit();
+                            newFruitTree.TryAddFruit();
+                            newFruitTree.TryAddFruit();
 
-                        Tree newTree = new Tree(treeType.ToString(), 5, false);
+                            Game1.currentLocation.terrainFeatures.Add(tile, newFruitTree);
+                        }
+                        // 2) Otherwise, check if it's a standard tree seed.
+                        else
+                        {
+                            // Try lookup by numeric ID as string, then by item name.
+                            string key = currentSeed.ParentSheetIndex.ToString();
+                            if (!StandardTreeMappings.TryGetValue(key, out string treeTypeString))
+                            {
+                                string nameKey = currentSeed.Name;
+                                StandardTreeMappings.TryGetValue(nameKey, out treeTypeString);
+                            }
 
-                        Game1.currentLocation.terrainFeatures.Add(tile, newTree);
+                            if (!string.IsNullOrEmpty(treeTypeString))
+                            {
+                                // For standard trees, create a Tree using the treeType string.
+                                Tree newTree = new Tree(treeTypeString, 5, isGreenRainTemporaryTree: false);
+                                Game1.currentLocation.terrainFeatures.Add(tile, newTree);
+                            }
+                            else
+                            {
+                                // If the seed is not recognized, skip placement.
+                                continue;
+                            }
+                        }
+
                         placedCount++;
                     }
                 }
+
                 if (placedCount >= placementsToDo)
                     break;
             }
 
-            // Remove placed seeds from inventory
+            // Remove the placed seeds from the player's inventory.
             currentSeed.Stack -= placedCount;
             if (currentSeed.Stack <= 0)
                 Game1.player.removeItemFromInventory(currentSeed);
         }
 
+        private static bool IsTreeSeed(StardewValley.Object obj, out int treeType)
+        {
+            // 1) First, check if it's a fruit tree sapling by its ParentSheetIndex.
+            if (FruitTreeMappings.TryGetValue(obj.ParentSheetIndex, out treeType))
+                return true;
+
+            // 2) Next, try by numeric ID using the standard tree seed mapping.
+            string key = obj.ParentSheetIndex.ToString();
+            if (SeedToTreeTypeMap.TryGetValue(key, out treeType))
+                return true;
+
+            // 3) Otherwise, try checking by the object's Name (for custom seeds).
+            string nameKey = obj.Name;
+            if (SeedToTreeTypeMap.TryGetValue(nameKey, out treeType))
+                return true;
+
+            treeType = -1;
+            return false;
+        }
 
         //All removetiles functions are manually called.
         public static void RemoveTiles(Rectangle tileArea)
@@ -611,79 +679,92 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
-
-        public static void RemoveTreesAndAddTreeSeeds(Rectangle tileArea)
+        public static void RemoveTreeToSeeds(Rectangle tileArea)
         {
-            // Check that the terrain features have been initialized.
+            // Make sure there are terrain features to process.
             if (Game1.currentLocation.terrainFeatures == null)
                 return;
 
-            // Make a list of all keys so we can modify the dictionary safely while iterating.
+            // Copy all keys so we can modify the dictionary in the loop.
             List<Vector2> keys = new List<Vector2>(Game1.currentLocation.terrainFeatures.Keys);
             foreach (Vector2 key in keys)
             {
-                // Check if the key (tile) is within the selected area.
+                // Check if the tile is in the selected rectangle.
                 if (key.X >= tileArea.X && key.X < tileArea.X + tileArea.Width &&
                     key.Y >= tileArea.Y && key.Y < tileArea.Y + tileArea.Height)
                 {
-                    // Check if the terrain feature at this tile is a tree.
-                    if (Game1.currentLocation.terrainFeatures[key] is StardewValley.TerrainFeatures.Tree tree)
+                    var terrainFeature = Game1.currentLocation.terrainFeatures[key];
+
+                    //
+                    // 1) Check if it's a standard Tree.
+                    //
+                    if (terrainFeature is StardewValley.TerrainFeatures.Tree tree)
                     {
-                        string TreeType = tree.treeType.ToString();
+                        string treeType = tree.treeType.ToString();
                         string seedItem = null;
-                        if (TreeType.Equals("1"))
+
+                        // Match your existing logic for standard trees.
+                        switch (treeType)
                         {
-                            seedItem = "309";
-                        }
-                        else if (TreeType.Equals("2"))
-                        {
-                            seedItem = "310";
-                        }
-                        else if (TreeType.Equals("3"))
-                        {
-                            seedItem = "311";
-                        }
-                        else if (TreeType.Equals("7"))
-                        {
-                            seedItem = "891";
-                        }
-                        else if (TreeType.Equals("8"))
-                        {
-                            seedItem = "292";
-                        }
-                        else if (TreeType.Equals("6"))
-                        {
-                            seedItem = "88";
-                        }
-                        else if (TreeType.Equals("9"))
-                        {
-                            seedItem = "88";
-                        }
-                        else if (TreeType.Equals("10"))
-                        {
-                            seedItem = "MossySeed";
-                        }
-                        else if (TreeType.Equals("11"))
-                        {
-                            seedItem = "MossySeed";
-                        }
-                        else if (TreeType.Equals("12"))
-                        {
-                            seedItem = "MossySeed";
-                        }
-                        else if (TreeType.Equals("13"))
-                        {
-                            seedItem = "MysticTreeSeed";
+                            case "1":
+                                seedItem = "309";  // Maple seed
+                                break;
+                            case "2":
+                                seedItem = "310";  // Acorn
+                                break;
+                            case "3":
+                                seedItem = "311";  // Pine Cone
+                                break;
+                            case "7":
+                                seedItem = "891";  // Mahogany seed
+                                break;
+                            case "8":
+                                seedItem = "292";  // Palm sapling
+                                break;
+                            case "6":
+                            case "9":
+                                seedItem = "88";   // Mushroom tree seed (?)
+                                break;
+                            case "10":
+                            case "11":
+                            case "12":
+                                seedItem = "MossySeed";
+                                break;
+                            case "13":
+                                seedItem = "MysticTreeSeed";
+                                break;
                         }
 
                         if (seedItem != null)
                         {
                             StardewValley.Object treeSeedItem = new StardewValley.Object(seedItem, 1);
-                            // Attempt to add the tree seed to the player's inventory.
                             bool added = Game1.player.addItemToInventoryBool(treeSeedItem);
                             if (added)
                             {
-                                // If successfully added, remove the tree from the terrain features.
+                                // Remove the tree from the map.
+                                Game1.currentLocation.terrainFeatures.Remove(key);
+                            }
+                        }
+                    }
+                    //
+                    // 2) Check if it's a FruitTree.
+                    //
+                    else if (terrainFeature is StardewValley.TerrainFeatures.FruitTree fruitTree)
+                    {
+                        // fruitTree.treeType holds an int for the fruit type.
+                        
+                        string fruitType = fruitTree.treeId.Get();
+                        Console.WriteLine("Tree.TreeID:" + fruitType);
+                     
+
+                        if (fruitType != null)
+                        {
+                            // Create the corresponding sapling item and try to add it to inventory.
+                            StardewValley.Object saplingItem = new StardewValley.Object(fruitType, 1);
+                            bool added = Game1.player.addItemToInventoryBool(saplingItem);
+                            if (added)
+                            {
+                                // Remove the fruit tree from the map.
                                 Game1.currentLocation.terrainFeatures.Remove(key);
                             }
                         }
@@ -691,6 +772,7 @@ namespace BuildModeForTilesAndCraftables
                 }
             }
         }
+
 
 
         public static void RemoveGrassFeatures(Rectangle tileArea)
@@ -736,8 +818,7 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
-
-        //can not remove plants as seeds, and untill the soil, furtilizers are not removed and will be lost
+ 
         public static void RemovePlantedSeeds(Rectangle tileArea)
         {
             // If there are no terrain features (like HoeDirt) to check, just exit.
