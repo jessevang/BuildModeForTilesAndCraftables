@@ -34,6 +34,8 @@ namespace BuildModeForTilesAndCraftables
             return new Rectangle(x, y, width, height);
         }
 
+      
+
 
         public static void DrawTileOverlay(SpriteBatch spriteBatch, int tileX, int tileY, BuildMode currentMode)
         {

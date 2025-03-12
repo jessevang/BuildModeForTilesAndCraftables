@@ -125,7 +125,7 @@ namespace BuildModeForTilesAndCraftables
                     if (mod.CurrentMode == BuildMode.Removal)
                     {
 
-                        if (mod.Config.SelectionRemovesBigCraftables)
+                        if (mod.Config.BigCraftables)
                         {
 
                             TileActions.RemoveAllButFloorAndBigCraftables(selection);
@@ -135,7 +135,8 @@ namespace BuildModeForTilesAndCraftables
                         TileActions.RemoveTiles(selection);
                         TileActions.RemoveTreeToSeeds(selection);
                         TileActions.RemovePlantedSeeds(selection);
-                        if (mod.Config.SelectionRemovesFloorTiles)
+                        TileActions.RemoveBouldersAndHardwood(selection);
+                        if (mod.Config.FloorTiles)
                         {
                             Game1.playSound("pickUpItem");
                             TileActions.RemoveFloorTiles(selection);

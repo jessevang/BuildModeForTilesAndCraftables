@@ -1,7 +1,7 @@
 {
   "Name": "BuildModeForTilesAndCraftables",
   "Author": "Darkmushu1",
-  "Version": "1.0.4",
+  "Version": "1.0.5",
   "Description": "Go into build mode to Select Area To Place Tiles Or Craftables. Also allows you to remove tiles or craftables.",
   "UniqueID": "Darkmushu1.BuildModeForTilesAndCraftables",
   "EntryDll": "BuildModeForTilesAndCraftables.dll",

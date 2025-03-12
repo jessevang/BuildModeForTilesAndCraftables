@@ -68,6 +68,10 @@ namespace BuildModeForTilesAndCraftables
             // Register the mod.
             gmcm.Register(ModManifest, () => Config = new ModConfig(), () => Helper.WriteConfig(Config));
 
+            gmcm.AddParagraph(
+                ModManifest,
+                text: () => "Update Hotkeys"
+            );
             // Add configuration options.
             gmcm.AddKeybind(
                 ModManifest,
@@ -93,24 +97,219 @@ namespace BuildModeForTilesAndCraftables
                 setValue: value => Config.EnableViewMode = value
             );
 
+            gmcm.AddParagraph(
+                ModManifest,
+                text: () => "Set Checkerbox placement with your selected area by setting how much columns and rows should be skipped below applies to both placement and removal selections."
+            );
+                
+            gmcm.AddNumberOption(
+                mod: ModManifest,
+                getValue: () => Instance.Config.Columns,
+                setValue: value => Instance.Config.Columns = (int)value,
+                name: () => "Column",
+                tooltip: () => "",
+                min: 0,
+                max: 16,
+                interval: 1
+
+            );
+
+
+
+
+
+            gmcm.AddNumberOption(
+                mod: ModManifest,
+                getValue: () => Instance.Config.Rows,
+                setValue: value => Instance.Config.Rows = (int)value,
+                name: () => "Row",
+                tooltip: () => "",
+                min: 0,
+                max: 16,
+                interval: 1
+
+            );
+
+
+            gmcm.AddParagraph(
+                 ModManifest,
+                 text: () => "Items Below Should Removed when Selected? "
+             );
+
             gmcm.AddBoolOption(
                 ModManifest,
                 name: () => "Remove Floor Tiles?",
                 tooltip: () => "Remove mode now removes Floor Tiles like wood planks",
-                getValue: () => Config.SelectionRemovesFloorTiles,
-                setValue: value => Config.SelectionRemovesFloorTiles = value
+                getValue: () => Config.FloorTiles,
+                setValue: value => Config.FloorTiles = value
             );
 
             gmcm.AddBoolOption(
                 ModManifest,
                 name: () => "Remove Big Craftables?",
                 tooltip: () => "Remove Mode will allow removal of Craftables like Kegs.",
-                getValue: () => Config.SelectionRemovesBigCraftables,
-                setValue: value => Config.SelectionRemovesBigCraftables = value
+                getValue: () => Config.BigCraftables,
+                setValue: value => Config.BigCraftables = value
             );
 
 
-            
+            gmcm.AddParagraph(
+    mod: ModManifest,
+    text: () => "Choose a music that plays during build mode"
+);
+
+
+            gmcm.AddTextOption(
+                mod: ModManifest,
+                getValue: () => Config.PlayThisMusicInBuildMode,
+                setValue: value => Config.PlayThisMusicInBuildMode = value,
+                name: () => "Music",
+                allowedValues: new string[]
+                {
+                    "50s",
+                    "AbigailFlute",
+                    "AbigailFluteDuet",
+                    "aerobics",
+                    "archaeo",
+                    "bigDrums",
+                    "breezy",
+                    "caldera",
+                    "Cavern",
+                    "christmasTheme",
+                    "Cloth",
+                    "CloudCountry",
+                    "clubloop",
+                    "cowboy_boss",
+                    "cowboy_outlawsong",
+                    "Cowboy_OVERWORLD",
+                    "Cowboy_singing",
+                    "Cowboy_undead",
+                    "crane_game",
+                    "crane_game_fast",
+                    "Crystal Bells",
+                    "Cyclops",
+                    "desolate",
+                    "distantBanjo",
+                    "EarthMine", // repeated thrice in your list, but kept if you need them
+                    "EarthMine",
+                    "EarthMine",
+                    "echos",
+                    "elliottPiano",
+                    "EmilyDance",
+                    "EmilyDream",
+                    "EmilyTheme",
+                    "end_credits",
+                    "event1",
+                    "event2",
+                    "fall1",
+                    "fall2",
+                    "fall3",
+                    "fallFest",
+                    "fieldofficeTentMusic",
+                    "FlowerDance",
+                    "FrogCave",
+                    "FrostMine", // repeated thrice
+                    "FrostMine",
+                    "FrostMine",
+                    "Ghost Synth",
+                    "grandpas_theme",
+                    "gusviolin",
+                    "harveys_theme_jazz",
+                    "heavy",
+                    "honkytonky",
+                    "Icicles",
+                    "IslandMusic",
+                    "jaunty",
+                    "junimoKart",
+                    "junimoKart_ghostMusic",
+                    "junimoKart_mushroomMusic",
+                    "junimoKart_slimeMusic",
+                    "junimoKart_whaleMusic",
+                    "junimoStarSong",
+                    "kindadumbautumn",
+                    "LavaMine", // repeated four times
+                    "LavaMine",
+                    "LavaMine",
+                    "LavaMine",
+                    "libraryTheme",
+                    "MainTheme",
+                    "Majestic",
+                    "MarlonsTheme",
+                    "marnieShop",
+                    "mermaidSong",
+                    "moonlightJellies",
+                    "movie_classic",
+                    "movie_nature",
+                    "movie_wumbus",
+                    "movieTheater",
+                    "movieTheaterAfter",
+                    "musicboxsong",
+                    "Near The Planet Core",
+                    "New Snow",
+                    "night_market",
+                    "Of Dwarves",
+                    "Orange",
+                    "Overcast",
+                    "Pink Petals",
+                    "PIRATE_THEME",
+                    "PIRATE_THEME(muffled)",
+                    "playful",
+                    "Plums",
+                    "poppy",
+                    "raccoonSong",
+                    "ragtime",
+                    "sad_kid",
+                    "sadpiano",
+                    "Saloon1",
+                    "sam_acoustic1",
+                    "sam_acoustic2",
+                    "sampractice",
+                    "sappypiano",
+                    "Secret Gnomes",
+                    "SettlingIn",
+                    "shaneTheme",
+                    "shimmeringbastion",
+                    "spaceMusic",
+                    "spirits_eve",
+                    "spring1",
+                    "spring2",
+                    "spring3",
+                    "springsongs", // repeated thrice
+                    "springsongs",
+                    "springsongs",
+                    "springtown",
+                    "Stadium_ambient",
+                    "starshoot",
+                    "submarine_song",
+                    "summer1",
+                    "summer2",
+                    "summer3",
+                    "SunRoom",
+                    "sweet",
+                    "tickTock",
+                    "tinymusicbox",
+                    "title_night",
+                    "tribal",
+                    "Tropical Jam",
+                    "VolcanoMines", // repeated twice
+                    "VolcanoMines",
+                    "VolcanoMines1",
+                    "VolcanoMines2",
+                    "wavy",
+                    "wedding",
+                    "winter1",
+                    "winter2",
+                    "winter3",
+                    "WizardSong",
+                    "woodsTheme",
+                    "XOR"
+                },
+                formatAllowedValue: null,
+                fieldId: null
+            );
+
+
+
         }
     }
 }

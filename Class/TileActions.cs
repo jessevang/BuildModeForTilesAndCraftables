@@ -5,11 +5,13 @@ using StardewValley.Objects;
 using StardewValley.TerrainFeatures;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BuildModeForTilesAndCraftables
 {
     public static class TileActions
     {
+        
 
         //PlaceTiles handles placement using the other placement methods.
         public static void PlaceTiles(Rectangle tileArea)
@@ -81,17 +83,20 @@ namespace BuildModeForTilesAndCraftables
 
         private static void PlaceSeed(Rectangle tileArea, StardewValley.Object seedItem)
         {
+            ModEntry mod = ModEntry.Instance;
             int availableRows = tileArea.Height;
             int availableCols = tileArea.Width;
+
             int placementsAvailable = seedItem.Stack; // Number of seeds available
 
-            for (int row = 0; row < availableRows && placementsAvailable > 0; row++)
+            for (int row = 0; row < availableRows && placementsAvailable > 0; row = row + 1 + mod.Config.Rows)
             {
-                for (int col = 0; col < availableCols && placementsAvailable > 0; col++)
+                for (int col = 0; col < availableCols && placementsAvailable > 0; col = col + 1 + mod.Config.Columns)
                 {
                     int x = tileArea.X + col;
                     int y = tileArea.Y + row;
                     Vector2 tile = new Vector2(x, y);
+
 
                     // Check if the tile is generally placeable and doesn't already have an object.
                     if (!Game1.currentLocation.isTilePlaceable(tile, false) ||
@@ -168,10 +173,11 @@ namespace BuildModeForTilesAndCraftables
             int availableInInventory = currentItem.Stack;
             int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
             int placedCount = 0;
+            ModEntry mod = ModEntry.Instance;
 
-            for (int row = 0; row < availableRows; row++)
+            for (int row = 0; row < availableRows; row = row + 1 + mod.Config.Rows)
             {
-                for (int col = 0; col < availableCols; col++)
+                for (int col = 0; col < availableCols; col = col + 1 + mod.Config.Columns)
                 {
                     if (placedCount >= placementsToDo)
                         break;
@@ -202,6 +208,7 @@ namespace BuildModeForTilesAndCraftables
         private static void PlaceGrass(Rectangle tileArea, StardewValley.Object currentItem, StardewValley.Item currentGrass)
         {
             // Determine grass type: 1 for normal, 7 for blue.
+            ModEntry mod = ModEntry.Instance;
             int grassType = currentGrass.ItemId.Equals("BlueGrassStarter") ? 7 : 1;
             int availableRows = tileArea.Height;
             int availableCols = tileArea.Width;
@@ -210,9 +217,9 @@ namespace BuildModeForTilesAndCraftables
             int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
             int placedCount = 0;
 
-            for (int row = 0; row < availableRows; row++)
+            for (int row = 0; row < availableRows; row = row + 1 + mod.Config.Rows)
             {
-                for (int col = 0; col < availableCols; col++)
+                for (int col = 0; col < availableCols; col = col + 1 + mod.Config.Columns)
                 {
                     if (placedCount >= placementsToDo)
                         break;
@@ -243,6 +250,7 @@ namespace BuildModeForTilesAndCraftables
 
         private static void PlaceFlooring(Rectangle tileArea, StardewValley.Object currentItem, Dictionary<string, string> floorLookup)
         {
+            ModEntry mod = ModEntry.Instance;
             int itemWidth = currentItem.bigCraftable.Value ? 2 : 1;
             int itemHeight = currentItem.bigCraftable.Value ? 2 : 1;
             int availableRows = tileArea.Height / itemHeight;
@@ -252,9 +260,9 @@ namespace BuildModeForTilesAndCraftables
             int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
             int placedCount = 0;
 
-            for (int row = 0; row < availableRows; row++)
+            for (int row = 0; row < availableRows; row = row + 1 + mod.Config.Rows)
             {
-                for (int col = 0; col < availableCols; col++)
+                for (int col = 0; col < availableCols; col = col + 1 + mod.Config.Columns)
                 {
                     if (placedCount >= placementsToDo)
                         break;
@@ -314,6 +322,7 @@ namespace BuildModeForTilesAndCraftables
 
         private static void PlaceFenceAndGate(Rectangle tileArea, StardewValley.Object currentItem, bool isGate)
         {
+            ModEntry mod = ModEntry.Instance;
             int itemWidth = 1;
             int itemHeight = 1;
             int availableRows = tileArea.Height / itemHeight;
@@ -323,9 +332,9 @@ namespace BuildModeForTilesAndCraftables
             int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
             int placedCount = 0;
 
-            for (int row = 0; row < availableRows; row++)
+            for (int row = 0; row < availableRows; row = row + 1 + mod.Config.Rows)
             {
-                for (int col = 0; col < availableCols; col++)
+                for (int col = 0; col < availableCols; col = col + 1 + mod.Config.Columns)
                 {
                     if (placedCount >= placementsToDo)
                         break;
@@ -360,6 +369,7 @@ namespace BuildModeForTilesAndCraftables
 
         private static void PlaceNormalPlacement(Rectangle tileArea, StardewValley.Object currentItem)
         {
+            ModEntry mod = ModEntry.Instance;
             int itemWidth = 1;
             int itemHeight = 1;
             int availableRows = tileArea.Height / itemHeight;
@@ -369,9 +379,9 @@ namespace BuildModeForTilesAndCraftables
             int placementsToDo = Math.Min(totalPlacementsPossible, availableInInventory);
             int placedCount = 0;
 
-            for (int row = 0; row < availableRows; row++)
+            for (int row = 0; row < availableRows; row = row + 1 + mod.Config.Rows)
             {
-                for (int col = 0; col < availableCols; col++)
+                for (int col = 0; col < availableCols; col = col + 1 + mod.Config.Columns)
                 {
                     if (placedCount >= placementsToDo)
                         break;
@@ -476,6 +486,7 @@ namespace BuildModeForTilesAndCraftables
         private static void PlaceTreeSeeds(Rectangle tileArea, StardewValley.Object currentSeed)
         {
             // Determine how many placements we can do.
+            ModEntry mod = ModEntry.Instance;
             int availableRows = tileArea.Height;
             int availableCols = tileArea.Width;
             int totalPlacementsPossible = availableRows * availableCols;
@@ -484,9 +495,9 @@ namespace BuildModeForTilesAndCraftables
 
             int placedCount = 0;
 
-            for (int row = 0; row < availableRows; row++)
+            for (int row = 0; row < availableRows; row = row + 1 + mod.Config.Rows)
             {
-                for (int col = 0; col < availableCols; col++)
+                for (int col = 0; col < availableCols; col = col + 1 + mod.Config.Columns)
                 {
                     if (placedCount >= placementsToDo)
                         break;
@@ -577,9 +588,10 @@ namespace BuildModeForTilesAndCraftables
         //All removetiles functions are manually called.
         public static void RemoveTiles(Rectangle tileArea)
         {
-            for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x++)
+            ModEntry mod = ModEntry.Instance;
+            for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x = x + 1 + mod.Config.Rows)
             {
-                for (int y = tileArea.Y; y < tileArea.Y + tileArea.Height; y++)
+                for (int y = tileArea.Y; y < tileArea.Y + tileArea.Height; y = y + 1 + mod.Config.Columns)
                 {
                     Vector2 tile = new Vector2(x, y);
                     if (Game1.currentLocation.objects.ContainsKey(tile))
@@ -607,43 +619,46 @@ namespace BuildModeForTilesAndCraftables
         {
             if (Game1.currentLocation.terrainFeatures == null)
                 return;
-
-            List<Vector2> keys = new List<Vector2>(Game1.currentLocation.terrainFeatures.Keys);
-            foreach (Vector2 key in keys)
+            ModEntry mod = ModEntry.Instance;
+            for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x = x + 1 + mod.Config.Rows)
             {
-                if (key.X >= tileArea.X && key.X < tileArea.X + tileArea.Width &&
-                    key.Y >= tileArea.Y && key.Y < tileArea.Y + tileArea.Height)
+                for (int y = tileArea.Y; y < tileArea.Y + tileArea.Height; y = y + 1 + mod.Config.Columns)
                 {
-                    var feature = Game1.currentLocation.terrainFeatures[key];
-                    if (feature != null && feature.ToString().Contains("Floor", StringComparison.OrdinalIgnoreCase))
+                    Vector2 tile = new Vector2(x, y);
+                    if (Game1.currentLocation.terrainFeatures.ContainsKey(tile))
                     {
-                        if (feature is Flooring floor)
+                        var feature = Game1.currentLocation.terrainFeatures[tile];
+                        if (feature != null && feature.ToString().Contains("Floor", StringComparison.OrdinalIgnoreCase))
                         {
-                            string floorType = floor.GetData().ItemId.ToString();
-                            StardewValley.Object floorTileItem = new StardewValley.Object(
-                                itemId: floorType,
-                                initialStack: 1,
-                                isRecipe: false,
-                                price: 0,
-                                quality: 0
-                            );
-                            bool added = Game1.player.addItemToInventoryBool(floorTileItem);
-                            if (added)
+                            if (feature is Flooring floor)
                             {
-                                Game1.currentLocation.terrainFeatures.Remove(key);
+                                string floorType = floor.GetData().ItemId.ToString();
+                                StardewValley.Object floorTileItem = new StardewValley.Object(
+                                    itemId: floorType,
+                                    initialStack: 1,
+                                    isRecipe: false,
+                                    price: 0,
+                                    quality: 0
+                                );
+                                bool added = Game1.player.addItemToInventoryBool(floorTileItem);
+                                if (added)
+                                {
+                                    Game1.currentLocation.terrainFeatures.Remove(tile);
+                                }
                             }
                         }
                     }
                 }
             }
         }
-        
+
 
         public static void RemoveAllButFloorAndBigCraftables(Rectangle tileArea)
         {
-            for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x++)
+            ModEntry mod = ModEntry.Instance;
+            for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x = x + 1 + mod.Config.Rows)
             {
-                for (int y = tileArea.Y; y < tileArea.Y + tileArea.Height; y++)
+                for (int y = tileArea.Y; y < tileArea.Y + tileArea.Height; y = y + 1 + mod.Config.Columns)
                 {
                     Vector2 tile = new Vector2(x, y);
                     if (Game1.currentLocation.objects.ContainsKey(tile))
@@ -684,88 +699,86 @@ namespace BuildModeForTilesAndCraftables
             // Make sure there are terrain features to process.
             if (Game1.currentLocation.terrainFeatures == null)
                 return;
-
-            // Copy all keys so we can modify the dictionary in the loop.
-            List<Vector2> keys = new List<Vector2>(Game1.currentLocation.terrainFeatures.Keys);
-            foreach (Vector2 key in keys)
+            ModEntry mod = ModEntry.Instance;
+            for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x = x + 1 + mod.Config.Rows)
             {
-                // Check if the tile is in the selected rectangle.
-                if (key.X >= tileArea.X && key.X < tileArea.X + tileArea.Width &&
-                    key.Y >= tileArea.Y && key.Y < tileArea.Y + tileArea.Height)
+                for (int y = tileArea.Y; y < tileArea.Y + tileArea.Height; y = y + 1 + mod.Config.Columns)
                 {
-                    var terrainFeature = Game1.currentLocation.terrainFeatures[key];
-
-                    //
-                    // 1) Check if it's a standard Tree.
-                    //
-                    if (terrainFeature is StardewValley.TerrainFeatures.Tree tree)
+                    Vector2 tile = new Vector2(x, y);
+                    if (Game1.currentLocation.terrainFeatures.ContainsKey(tile))
                     {
-                        string treeType = tree.treeType.ToString();
-                        string seedItem = null;
+                        var terrainFeature = Game1.currentLocation.terrainFeatures[tile];
 
-                        // Match your existing logic for standard trees.
-                        switch (treeType)
+                        //
+                        // 1) Check if it's a standard Tree.
+                        //
+                        if (terrainFeature is StardewValley.TerrainFeatures.Tree tree)
                         {
-                            case "1":
-                                seedItem = "309";  // Maple seed
-                                break;
-                            case "2":
-                                seedItem = "310";  // Acorn
-                                break;
-                            case "3":
-                                seedItem = "311";  // Pine Cone
-                                break;
-                            case "7":
-                                seedItem = "891";  // Mahogany seed
-                                break;
-                            case "8":
-                                seedItem = "292";  // Palm sapling
-                                break;
-                            case "6":
-                            case "9":
-                                seedItem = "88";   // Mushroom tree seed (?)
-                                break;
-                            case "10":
-                            case "11":
-                            case "12":
-                                seedItem = "MossySeed";
-                                break;
-                            case "13":
-                                seedItem = "MysticTreeSeed";
-                                break;
-                        }
+                            string treeType = tree.treeType.ToString();
+                            string seedItem = null;
 
-                        if (seedItem != null)
-                        {
-                            StardewValley.Object treeSeedItem = new StardewValley.Object(seedItem, 1);
-                            bool added = Game1.player.addItemToInventoryBool(treeSeedItem);
-                            if (added)
+                            // Match your existing logic for standard trees.
+                            switch (treeType)
                             {
-                                // Remove the tree from the map.
-                                Game1.currentLocation.terrainFeatures.Remove(key);
+                                case "1":
+                                    seedItem = "309";  // Maple seed
+                                    break;
+                                case "2":
+                                    seedItem = "310";  // Acorn
+                                    break;
+                                case "3":
+                                    seedItem = "311";  // Pine Cone
+                                    break;
+                                case "7":
+                                    seedItem = "891";  // Mahogany seed
+                                    break;
+                                case "8":
+                                    seedItem = "292";  // Palm sapling
+                                    break;
+                                case "6":
+                                case "9":
+                                    seedItem = "88";   // Mushroom tree seed (?)
+                                    break;
+                                case "10":
+                                case "11":
+                                case "12":
+                                    seedItem = "MossySeed";
+                                    break;
+                                case "13":
+                                    seedItem = "MysticTreeSeed";
+                                    break;
+                            }
+
+                            if (seedItem != null)
+                            {
+                                StardewValley.Object treeSeedItem = new StardewValley.Object(seedItem, 1);
+                                bool added = Game1.player.addItemToInventoryBool(treeSeedItem);
+                                if (added)
+                                {
+                                    // Remove the tree from the map.
+                                    Game1.currentLocation.terrainFeatures.Remove(tile);
+                                }
                             }
                         }
-                    }
-                    //
-                    // 2) Check if it's a FruitTree.
-                    //
-                    else if (terrainFeature is StardewValley.TerrainFeatures.FruitTree fruitTree)
-                    {
-                        // fruitTree.treeType holds an int for the fruit type.
-                        
-                        string fruitType = fruitTree.treeId.Get();
-                        Console.WriteLine("Tree.TreeID:" + fruitType);
-                     
-
-                        if (fruitType != null)
+                        //
+                        // 2) Check if it's a FruitTree.
+                        //
+                        else if (terrainFeature is StardewValley.TerrainFeatures.FruitTree fruitTree)
                         {
-                            // Create the corresponding sapling item and try to add it to inventory.
-                            StardewValley.Object saplingItem = new StardewValley.Object(fruitType, 1);
-                            bool added = Game1.player.addItemToInventoryBool(saplingItem);
-                            if (added)
+                            // fruitTree.treeType holds an int for the fruit type.
+                            string fruitType = fruitTree.treeId.Get();
+                            Console.WriteLine("Tree.TreeID:" + fruitType);
+
+                            if (fruitType != null)
                             {
-                                // Remove the fruit tree from the map.
-                                Game1.currentLocation.terrainFeatures.Remove(key);
+                                // Create the corresponding sapling item and try to add it to inventory.
+                                StardewValley.Object saplingItem = new StardewValley.Object(fruitType, 1);
+                                bool added = Game1.player.addItemToInventoryBool(saplingItem);
+                                if (added)
+                                {
+                                    // Remove the fruit tree from the map.
+                                    Game1.currentLocation.terrainFeatures.Remove(tile);
+                                }
                             }
                         }
                     }
@@ -777,40 +790,39 @@ namespace BuildModeForTilesAndCraftables
 
         public static void RemoveGrassFeatures(Rectangle tileArea)
         {
-
             if (Game1.currentLocation.terrainFeatures == null)
                 return;
+            ModEntry mod = ModEntry.Instance;
 
-            List<Vector2> keys = new List<Vector2>(Game1.currentLocation.terrainFeatures.Keys);
-
-            foreach (Vector2 key in keys)
+            for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x = x + 1 + mod.Config.Rows)
             {
-
-                if (key.X >= tileArea.X && key.X < tileArea.X + tileArea.Width &&
-                    key.Y >= tileArea.Y && key.Y < tileArea.Y + tileArea.Height)
+                for (int y = tileArea.Y; y < tileArea.Y + tileArea.Height; y = y + 1 + mod.Config.Columns)
                 {
-
-                    if (Game1.currentLocation.terrainFeatures[key] is Grass grass)
+                    Vector2 tile = new Vector2(x, y);
+                    if (Game1.currentLocation.terrainFeatures.ContainsKey(tile))
                     {
-                        StardewValley.Object returnItem = null;
+                        if (Game1.currentLocation.terrainFeatures[tile] is Grass grass)
+                        {
+                            StardewValley.Object returnItem = null;
 
-                        if (grass.grassType.Get() == 7)
-                        {
-                            returnItem = new StardewValley.Object("BlueGrassStarter", 1);
-                        }
-                        else if (grass.grassType.Get() == 1)
-                        {
-                            returnItem = new StardewValley.Object("297", 1);
-                        }
-
-                        // If we have a valid item, add it to the player's inventory.
-                        if (returnItem != null)
-                        {
-                            bool added = Game1.player.addItemToInventoryBool(returnItem);
-                            if (added)
+                            if (grass.grassType.Get() == 7)
                             {
-                                // Remove the grass feature once its corresponding item is added.
-                                Game1.currentLocation.terrainFeatures.Remove(key);
+                                returnItem = new StardewValley.Object("BlueGrassStarter", 1);
+                            }
+                            else if (grass.grassType.Get() == 1)
+                            {
+                                returnItem = new StardewValley.Object("297", 1);
+                            }
+
+                            // If we have a valid item, add it to the player's inventory.
+                            if (returnItem != null)
+                            {
+                                bool added = Game1.player.addItemToInventoryBool(returnItem);
+                                if (added)
+                                {
+                                    // Remove the grass feature once its corresponding item is added.
+                                    Game1.currentLocation.terrainFeatures.Remove(tile);
+                                }
                             }
                         }
                     }
@@ -818,50 +830,79 @@ namespace BuildModeForTilesAndCraftables
             }
         }
 
- 
+
         public static void RemovePlantedSeeds(Rectangle tileArea)
         {
             // If there are no terrain features (like HoeDirt) to check, just exit.
             if (Game1.currentLocation.terrainFeatures == null)
                 return;
-
-            // Copy the keys so we can safely modify terrainFeatures while iterating.
-            List<Vector2> keys = new List<Vector2>(Game1.currentLocation.terrainFeatures.Keys);
-
-            foreach (Vector2 tile in keys)
+            ModEntry mod = ModEntry.Instance;
+            for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x = x + 1 + mod.Config.Rows)
             {
-                // Check if this tile is in the selected rectangle.
-                if (tile.X >= tileArea.X && tile.X < tileArea.X + tileArea.Width &&
-                    tile.Y >= tileArea.Y && tile.Y < tileArea.Y + tileArea.Height)
+                for (int y = tileArea.Y; y < tileArea.Y + tileArea.Height; y = y + 1 + mod.Config.Columns)
                 {
-                    // If this terrain feature is HoeDirt, it might have a planted crop.
-                    if (Game1.currentLocation.terrainFeatures[tile] is HoeDirt dirt)
+                    Vector2 tile = new Vector2(x, y);
+                    if (Game1.currentLocation.terrainFeatures.ContainsKey(tile))
                     {
-                        // Check if there's a crop planted.
-                        if (dirt.crop != null)
+                        // If this terrain feature is HoeDirt, it might have a planted crop.
+                        if (Game1.currentLocation.terrainFeatures[tile] is HoeDirt dirt)
                         {
-                            // Convert the crop’s netSeedIndex (a NetString) to an integer.
-                            if (!int.TryParse(dirt.crop.netSeedIndex.Value, out int seedIndex))
+                            // Check if there's a crop planted.
+                            if (dirt.crop != null)
                             {
-                                // If conversion fails, skip processing this tile.
-                                continue;
-                            }
-
-                            // Create the corresponding seed object using the seed index.
-                            StardewValley.Object seedItem = new StardewValley.Object(seedIndex.ToString(), 1);
-                            bool added = Game1.player.addItemToInventoryBool(seedItem);
-                            if (added)
-                            {
-                                // Attempt to recover fertilizer (or speed growth item) if it exists.
-                                if (int.TryParse(dirt.fertilizer.Value, out int fertValue) && fertValue > 0)
+                                // Convert the crop’s netSeedIndex (a NetString) to an integer.
+                                if (!int.TryParse(dirt.crop.netSeedIndex.Value, out int seedIndex))
                                 {
-                                    StardewValley.Object fertItem = new StardewValley.Object(fertValue.ToString(), 1);
-                                    Game1.player.addItemToInventoryBool(fertItem);
+                                    // If conversion fails, skip processing this tile.
+                                    continue;
                                 }
 
-                                // Remove the HoeDirt (which contains both the crop and the fertilizer)
-                                // so that the tile reverts back to untilled ground.
-                                Game1.currentLocation.terrainFeatures.Remove(tile);
+                                // Create the corresponding seed object using the seed index.
+                                StardewValley.Object seedItem = new StardewValley.Object(seedIndex.ToString(), 1);
+                                bool added = Game1.player.addItemToInventoryBool(seedItem);
+                                if (added)
+                                {
+                                    // Attempt to recover fertilizer (or speed growth item) if it exists.
+                                    if (int.TryParse(dirt.fertilizer.Value, out int fertValue) && fertValue > 0)
+                                    {
+                                        StardewValley.Object fertItem = new StardewValley.Object(fertValue.ToString(), 1);
+                                        Game1.player.addItemToInventoryBool(fertItem);
+                                    }
+
+                                    // Remove the HoeDirt (which contains both the crop and the fertilizer)
+                                    // so that the tile reverts back to untilled ground.
+                                    Game1.currentLocation.terrainFeatures.Remove(tile);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static readonly HashSet<int> ResourseClumpIDs = new HashSet<int>
+        {
+            600, 602, 603, 672, 148    // Just view code in ResourceClump for these ids
+        };
+
+
+        public static void RemoveBouldersAndHardwood(Rectangle tileArea)
+        {
+            ModEntry mod = ModEntry.Instance;
+            for (int x = tileArea.X; x < tileArea.X + tileArea.Width; x = x + 1 + mod.Config.Rows)
+            {
+                for (int y = tileArea.Y; y < tileArea.Y + tileArea.Height; y = y + 1 + mod.Config.Columns)
+                {
+                    Vector2 tile = new Vector2(x, y);
+                    // Iterate resource clumps in reverse to safely remove items.
+                    for (int i = Game1.currentLocation.resourceClumps.Count - 1; i >= 0; i--)
+                    {
+                        var clump = Game1.currentLocation.resourceClumps[i];
+                        if (clump.Tile.Equals(tile))
+                        {
+                            if (ResourseClumpIDs.Contains(clump.parentSheetIndex.Value))
+                            {
+                                Game1.currentLocation.resourceClumps.RemoveAt(i);
                             }
                         }
                     }

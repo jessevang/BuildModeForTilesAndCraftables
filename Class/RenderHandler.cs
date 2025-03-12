@@ -22,13 +22,7 @@ namespace BuildModeForTilesAndCraftables
             int toolbarYOffset = (int)(screenHeight * 0.1475);
 
 
-            // Instance.Monitor.Log($"Viewport Dimensions -> Width: {screenWidth.ToString()}, Height: {screenHeight.ToString()}", StardewModdingAPI.LogLevel.Debug);
 
-
-            /// <param name="x">The x coordinate of the top-left corner of the created <see cref="Rectangle"/>.</param>
-            /// <param name="y">The y coordinate of the top-left corner of the created <see cref="Rectangle"/>.</param>
-            /// <param name="width">The width of the created <see cref="Rectangle"/>.</param>
-            /// <param name="height">The height of the created <see cref="Rectangle"/>.</param>
             // Ensure the toolbar area stays in the correct position even when zooming.
             Rectangle toolbarBounds = new Rectangle(
                 x: toolbarXOffset,
@@ -37,7 +31,6 @@ namespace BuildModeForTilesAndCraftables
                 height: toolbarHeight
             );
 
-            // Instance.Monitor.Log($"Toolbar Bounds -> X: {toolbarBounds.X.ToString()}, Y: {toolbarBounds.Y.ToString()}, Width: {toolbarBounds.Width.ToString()}, Height: {toolbarBounds.Height.ToString()}", StardewModdingAPI.LogLevel.Debug);
 
             return toolbarBounds;
         }
@@ -94,9 +87,9 @@ namespace BuildModeForTilesAndCraftables
                 else
                 {
                     Rectangle selection = TileUtilities.GetTileSelectionRectangle(mod.dragStart, mod.dragEnd);
-                    for (int x = selection.X; x < selection.X + selection.Width; x++)
+                    for (int x = selection.X; x < selection.X + selection.Width; x = x + 1 + mod.Config.Columns)
                     {
-                        for (int y = selection.Y; y < selection.Y + selection.Height; y++)
+                        for (int y = selection.Y; y < selection.Y + selection.Height; y = y + 1 + mod.Config.Rows)
                         {
                             TileUtilities.DrawTileOverlay(spriteBatch, x, y, mod.CurrentMode);
                         }
