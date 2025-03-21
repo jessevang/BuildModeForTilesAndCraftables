@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewValley;
 using StardewValley.BellsAndWhistles;
@@ -45,29 +46,65 @@ namespace BuildModeForTilesAndCraftables
             Point mousePoint = new Point(Game1.getMouseX(false), Game1.getMouseY(false));
             Rectangle toolbarBounds = GetToolbarBounds();
 
-
+            Rectangle dialogBox;
             // Draw custom instructions overlay regardless of mouse position.
-            Rectangle dialogBox = new Rectangle(10, 10, 1000, 150);
-            IClickableMenu.drawTextureBox(
-                spriteBatch,
-                Game1.mouseCursors,
-                new Rectangle(403, 373, 6, 6),
-                dialogBox.X, dialogBox.Y, dialogBox.Width, dialogBox.Height,
-                Color.White * 0.5f, 4f, false
-            );
-
-
-
-            string modeText = mod.CurrentMode switch
+            if (mod.isUsingKeyboard)
             {
-                BuildMode.Placement => $"Placement Mode ({mod.Config.ToggleBetweenAddandRemoveTiles}: toggle mode)",
-                BuildMode.Removal => $"Removal Mode ({mod.Config.ToggleBetweenAddandRemoveTiles}: toggle mode)",
-                BuildMode.View => $"View Mode ({mod.Config.ToggleBetweenAddandRemoveTiles}: toggle mode)",
-                _ => ""
-            };
+                dialogBox = new Rectangle(10, 10, 1000, 180);
+                IClickableMenu.drawTextureBox(
+                    spriteBatch,
+                    Game1.mouseCursors,
+                    new Rectangle(403, 373, 6, 6),
+                    dialogBox.X, dialogBox.Y, dialogBox.Width, dialogBox.Height,
+                    Color.White * 0.5f, 4f, false
+                );
+                string modeText = mod.CurrentMode switch
+                {
+                    BuildMode.Placement => $"Placement Mode ({mod.Config.ToggleBetweenAddandRemoveTiles}: toggle mode)",
+                    BuildMode.Removal => $"Removal Mode ({mod.Config.ToggleBetweenAddandRemoveTiles}: toggle mode)",
+                    BuildMode.View => $"View Mode ({mod.Config.ToggleBetweenAddandRemoveTiles}: toggle mode)",
+                    _ => ""
+                };
+                SpriteText.drawString(spriteBatch, modeText, dialogBox.X + 10, dialogBox.Y + 10);
+                SpriteText.drawString(spriteBatch, $"LMB: Select/Drag | RMB: Cancel | {mod.Config.TurnOnBuildMode}: Exit", dialogBox.X + 20, dialogBox.Y + 60);
 
-            SpriteText.drawString(spriteBatch, modeText, dialogBox.X + 10, dialogBox.Y + 10);
-            SpriteText.drawString(spriteBatch, $"LMB: Select/Drag | RMB: Cancel | {mod.Config.TurnOnBuildMode}: Exit", dialogBox.X + 20, dialogBox.Y + 60);
+
+            }
+            else if (!mod.isUsingKeyboard)
+            {
+                dialogBox = new Rectangle(10, 10, 1000, 240);
+                IClickableMenu.drawTextureBox(
+                    spriteBatch,
+                    Game1.mouseCursors,
+                    new Rectangle(403, 373, 6, 6),
+                    dialogBox.X, dialogBox.Y, dialogBox.Width, dialogBox.Height,
+                    Color.White * 0.5f, 4f, false
+                );
+
+                string modeTextButton = mod.CurrentMode switch
+                {
+                    BuildMode.Placement => $"Placement Mode ({mod.Config.ToggleBetweenAddandRemoveTilesButton}: toggle mode)",
+                    BuildMode.Removal => $"Removal Mode ({mod.Config.ToggleBetweenAddandRemoveTilesButton}: toggle mode)",
+                    BuildMode.View => $"View Mode ({mod.Config.ToggleBetweenAddandRemoveTilesButton}: toggle mode)",
+                    _ => ""
+                };
+
+
+                SpriteText.drawString(spriteBatch, modeTextButton, dialogBox.X + 10, dialogBox.Y + 10);
+                SpriteText.drawString(spriteBatch, mod.Config.SelectAndConfirmArea.ToString() + $": Select/Drag", dialogBox.X + 20, dialogBox.Y + 60);
+                SpriteText.drawString(spriteBatch, mod.Config.CancelSelection.ToString() + $": Cancel", dialogBox.X + 20, dialogBox.Y + 120);
+                SpriteText.drawString(spriteBatch, mod.Config.TurnOnBuildModeButton.ToString() + $": Exit", dialogBox.X + 20, dialogBox.Y + 180);
+
+            }
+
+
+
+
+
+
+
+
+
 
 
             //removes tile on mouse if in view mode

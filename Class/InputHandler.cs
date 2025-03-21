@@ -18,7 +18,7 @@ namespace BuildModeForTilesAndCraftables
                 return;
 
             // Toggle placement/removal mode using the configured key.
-            if (e.Button == mod.Config.ToggleBetweenAddandRemoveTiles.ToSButton())
+            if (e.Button == mod.Config.ToggleBetweenAddandRemoveTiles || e.Button == mod.Config.ToggleBetweenAddandRemoveTilesButton)
             {
 
                 CycleBuildMode();
@@ -29,6 +29,7 @@ namespace BuildModeForTilesAndCraftables
                 return;
             }
 
+            
 
             // Use our toolbar bounds.
             Rectangle toolbarBounds = RenderHandler.GetToolbarBounds();
@@ -45,7 +46,7 @@ namespace BuildModeForTilesAndCraftables
                 // The exact index might vary depending on the game version, but often 0 indicates building construction.
                 if (carpenterMenu.IsActive())
                 {
-                    if (e.Button == mod.Config.TurnOnBuildMode.ToSButton())
+                    if (e.Button == mod.Config.TurnOnBuildMode || e.Button == mod.Config.TurnOnBuildModeButton)
                     {
                         Game1.addHUDMessage(new HUDMessage("Cannot open Build Mode when Carpentor Menu is Open", 3));
                     }
@@ -58,9 +59,17 @@ namespace BuildModeForTilesAndCraftables
 
 
             // Toggle custom build mode.
-            if (e.Button == mod.Config.TurnOnBuildMode.ToSButton())
+            if (e.Button == mod.Config.TurnOnBuildMode || e.Button == mod.Config.TurnOnBuildModeButton)
             {
-                mod.isBuildModeActive = !mod.isBuildModeActive;
+                if (e.Button == mod.Config.TurnOnBuildMode)
+                {
+                    mod.isUsingKeyboard = true;
+                }
+                else if (e.Button == mod.Config.TurnOnBuildModeButton)
+                {
+                    mod.isUsingKeyboard = false;
+                }
+                    mod.isBuildModeActive = !mod.isBuildModeActive;
                 if (mod.isBuildModeActive)
                 {
                     Game1.player.canMove = false;  // Freeze the farmer.
@@ -106,8 +115,17 @@ namespace BuildModeForTilesAndCraftables
 
 
             // Process left-click (outside the toolbar area).
-            if (e.Button == SButton.MouseLeft)
+            if (e.Button == SButton.MouseLeft || e.Button == mod.Config.SelectAndConfirmArea)
             {
+                if (e.Button == SButton.MouseLeft)
+                {
+                    mod.isUsingKeyboard = true;
+                }
+                else if (e.Button == mod.Config.SelectAndConfirmArea)
+                {
+                    mod.isUsingKeyboard = false;
+                }
+
                 if (!mod.isDragging)
                 {
                     mod.isDragging = true;
@@ -175,8 +193,17 @@ namespace BuildModeForTilesAndCraftables
             }
 
             // Right-click cancels the drag selection.
-            if (e.Button == SButton.MouseRight)
+            if (e.Button == SButton.MouseRight || e.Button == mod.Config.CancelSelection)
             {
+                if (e.Button == SButton.MouseRight)
+                {
+                    mod.isUsingKeyboard = true;
+                }
+                else if (e.Button == mod.Config.CancelSelection)
+                {
+                    mod.isUsingKeyboard = false;
+                }
+
                 if (mod.isDragging)
                 {
                     mod.isDragging = false;
@@ -230,15 +257,16 @@ namespace BuildModeForTilesAndCraftables
 
                 if (mod.isBuildModeActive && !mod.isDragging)
                 {
-                    if (keyboardState.IsKeyDown(Keys.W))
+                    if (keyboardState.IsKeyDown(Keys.W) || mod.Helper.Input.IsDown(mod.Config.CameraUpButton))
                         mod.buildCameraOffset.Y -= scrollSpeed;
-                    if (keyboardState.IsKeyDown(Keys.S))
+                    if (keyboardState.IsKeyDown(Keys.S) || mod.Helper.Input.IsDown(mod.Config.CameraDownButton))
                         mod.buildCameraOffset.Y += scrollSpeed;
-                    if (keyboardState.IsKeyDown(Keys.A))
+                    if (keyboardState.IsKeyDown(Keys.A) || mod.Helper.Input.IsDown(mod.Config.CameraLeftButton))
                         mod.buildCameraOffset.X -= scrollSpeed;
-                    if (keyboardState.IsKeyDown(Keys.D))
+                    if (keyboardState.IsKeyDown(Keys.D) || mod.Helper.Input.IsDown(mod.Config.CameraRightButton))
                         mod.buildCameraOffset.X += scrollSpeed;
                 }
+
 
 
                 // Calculate map dimensions in pixels.

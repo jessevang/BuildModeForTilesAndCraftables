@@ -11,6 +11,7 @@ namespace BuildModeForTilesAndCraftables
 {
     public class ModEntry : Mod
     {
+        public bool isUsingKeyboard { get; set; } = true;
         public const int TileSize = 64;
         public Point originalViewport;
         public Vector2 buildCameraOffset = Vector2.Zero;
@@ -56,6 +57,7 @@ namespace BuildModeForTilesAndCraftables
             helper.Events.GameLoop.UpdateTicked += InputHandler.OnUpdateTicked;
             helper.Events.Display.RenderedHud += RenderHandler.OnRenderedHud;
             helper.Events.GameLoop.GameLaunched += OnGameLaunched;
+
         }
 
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
@@ -68,34 +70,6 @@ namespace BuildModeForTilesAndCraftables
             // Register the mod.
             gmcm.Register(ModManifest, () => Config = new ModConfig(), () => Helper.WriteConfig(Config));
 
-            gmcm.AddParagraph(
-                ModManifest,
-                text: () => "Update Hotkeys"
-            );
-            // Add configuration options.
-            gmcm.AddKeybind(
-                ModManifest,
-                name: () => "Build Mode",
-                tooltip: () => "Toggles On/Off Build Mode",
-                getValue: () => Config.TurnOnBuildMode.ToSButton(),
-                setValue: value => Config.TurnOnBuildMode = (Keys)value
-            );
-
-            gmcm.AddKeybind(
-                ModManifest,
-                name: () => "Placement / Removal",
-                tooltip: () => "Once in build mode this hotkey toggles between Placement mode and Removal Mode",
-                getValue: () => Config.ToggleBetweenAddandRemoveTiles.ToSButton(),
-                setValue: value => Config.ToggleBetweenAddandRemoveTiles = (Keys)value
-            );
-
-            gmcm.AddBoolOption(
-                ModManifest,
-                name: () => "Enable View Mode?",
-                tooltip: () => "Adds View mode with cycling through Remove or Place. Generally used for other mods to enable mouse click",
-                getValue: () => Config.EnableViewMode,
-                setValue: value => Config.EnableViewMode = value
-            );
 
             gmcm.AddParagraph(
                 ModManifest,
@@ -136,6 +110,7 @@ namespace BuildModeForTilesAndCraftables
                  text: () => "Items Below Should Removed when Selected? "
              );
 
+
             gmcm.AddBoolOption(
                 ModManifest,
                 name: () => "Remove Floor Tiles?",
@@ -154,9 +129,9 @@ namespace BuildModeForTilesAndCraftables
 
 
             gmcm.AddParagraph(
-    mod: ModManifest,
-    text: () => "Choose a music that plays during build mode"
-);
+                mod: ModManifest,
+                text: () => "Choose a music that plays during build mode"
+            );
 
 
             gmcm.AddTextOption(
@@ -190,8 +165,6 @@ namespace BuildModeForTilesAndCraftables
                     "Cyclops",
                     "desolate",
                     "distantBanjo",
-                    "EarthMine", // repeated thrice in your list, but kept if you need them
-                    "EarthMine",
                     "EarthMine",
                     "echos",
                     "elliottPiano",
@@ -208,8 +181,6 @@ namespace BuildModeForTilesAndCraftables
                     "fieldofficeTentMusic",
                     "FlowerDance",
                     "FrogCave",
-                    "FrostMine", // repeated thrice
-                    "FrostMine",
                     "FrostMine",
                     "Ghost Synth",
                     "grandpas_theme",
@@ -227,9 +198,6 @@ namespace BuildModeForTilesAndCraftables
                     "junimoKart_whaleMusic",
                     "junimoStarSong",
                     "kindadumbautumn",
-                    "LavaMine", // repeated four times
-                    "LavaMine",
-                    "LavaMine",
                     "LavaMine",
                     "libraryTheme",
                     "MainTheme",
@@ -274,8 +242,6 @@ namespace BuildModeForTilesAndCraftables
                     "spring1",
                     "spring2",
                     "spring3",
-                    "springsongs", // repeated thrice
-                    "springsongs",
                     "springsongs",
                     "springtown",
                     "Stadium_ambient",
@@ -291,7 +257,6 @@ namespace BuildModeForTilesAndCraftables
                     "title_night",
                     "tribal",
                     "Tropical Jam",
-                    "VolcanoMines", // repeated twice
                     "VolcanoMines",
                     "VolcanoMines1",
                     "VolcanoMines2",
@@ -307,6 +272,108 @@ namespace BuildModeForTilesAndCraftables
                 formatAllowedValue: null,
                 fieldId: null
             );
+            gmcm.AddParagraph(
+   ModManifest,
+   text: () => "Update Keyboard Hotkeys"
+);
+            // Add configuration options.
+            gmcm.AddKeybind(
+                ModManifest,
+                name: () => "Build Mode",
+                tooltip: () => "Toggles On/Off Build Mode",
+                getValue: () => Config.TurnOnBuildMode,
+                setValue: value => Config.TurnOnBuildMode = value
+            );
+
+            gmcm.AddKeybind(
+                ModManifest,
+                name: () => "Placement / Removal",
+                tooltip: () => "Once in build mode this hotkey toggles between Placement mode and Removal Mode",
+                getValue: () => Config.ToggleBetweenAddandRemoveTiles,
+                setValue: value => Config.ToggleBetweenAddandRemoveTiles = value
+            );
+
+            gmcm.AddBoolOption(
+                ModManifest,
+                name: () => "Enable View Mode?",
+                tooltip: () => "Adds View mode with cycling through Remove or Place. Generally used for other mods to enable mouse click",
+                getValue: () => Config.EnableViewMode,
+                setValue: value => Config.EnableViewMode = value
+            );
+
+
+
+
+            //===================hotkeys for controllers================
+            gmcm.AddParagraph(
+               ModManifest,
+               text: () => "Update Controller Hotkeys"
+            );
+
+                    //public Buttons TurnOnBuildModeButton { get; set; } = Buttons.LeftStick;
+
+            gmcm.AddKeybind(
+                ModManifest,
+                name: () => "Turn On/Off Build Mode",
+                tooltip: () => "Use this controller hotkey to toggle Build mode on/off",
+                getValue: () => Config.TurnOnBuildModeButton,
+                setValue: value => Config.TurnOnBuildModeButton = value
+            );
+            gmcm.AddKeybind(
+                ModManifest,
+                name: () => "Select Area",
+                tooltip: () => "Use this controller button hotkey to select area for removal or placement",
+                getValue: () => Config.SelectAndConfirmArea,
+                setValue: value => Config.SelectAndConfirmArea = value
+            );
+
+            gmcm.AddKeybind(
+                ModManifest,
+                name: () => "Cancel Area Selection",
+                tooltip: () => "Use this controller Hotkey to cancel current area selection",
+                getValue: () => Config.CancelSelection,
+                setValue: value => Config.CancelSelection = value
+            );
+
+            gmcm.AddKeybind(
+                ModManifest,
+                name: () => "Toggle Placement/Removal Mode",
+                tooltip: () => "Use this controller hotkey to toggle between placement / removal mode",
+                getValue: () => Config.ToggleBetweenAddandRemoveTilesButton,
+                setValue: value => Config.ToggleBetweenAddandRemoveTilesButton = value
+            );
+
+            gmcm.AddKeybind(
+                ModManifest,
+                name: () => "Camera Up",
+                tooltip: () => "Use this controller hotkey to move camera up",
+                getValue: () => Config.CameraUpButton,
+                setValue: value => Config.CameraUpButton = value
+            );
+            gmcm.AddKeybind(
+                ModManifest,
+                name: () => "Camera Left",
+                tooltip: () => "Use this controller hotkey to move camera left",
+                getValue: () => Config.CameraLeftButton,
+                setValue: value => Config.CameraLeftButton = value
+            );
+
+            gmcm.AddKeybind(
+                ModManifest,
+                name: () => "Camera Right",
+                tooltip: () => "Use this controller hotkey to move camera Right",
+                getValue: () => Config.CameraRightButton,
+                setValue: value => Config.CameraRightButton = value
+            );
+
+            gmcm.AddKeybind(
+                ModManifest,
+                name: () => "Camera Down",
+                tooltip: () => "Use this controller hotkey to move camera down",
+                getValue: () => Config.CameraDownButton,
+                setValue: value => Config.CameraDownButton = value
+            );
+
 
 
 
