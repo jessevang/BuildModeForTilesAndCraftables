@@ -29,7 +29,16 @@ namespace BuildModeForTilesAndCraftables
                 return;
             }
 
-            
+            //Clicks to draw area is disable when menus like GMCM are opened.
+            if (Game1.activeClickableMenu != null)
+            {
+                return;
+            }
+
+
+
+
+
 
             // Use our toolbar bounds.
             Rectangle toolbarBounds = RenderHandler.GetToolbarBounds();
@@ -39,7 +48,7 @@ namespace BuildModeForTilesAndCraftables
             if (toolbarBounds.Contains(mousePoint))
                 return;
 
-
+            /*
             if (Game1.activeClickableMenu is StardewValley.Menus.CarpenterMenu carpenterMenu)
             {
                 // Check if the menu is in the building construction tab.
@@ -54,6 +63,7 @@ namespace BuildModeForTilesAndCraftables
                     return;
                 }
             }
+            */
 
 
 
